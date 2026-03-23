@@ -679,7 +679,9 @@ class _MainMapScreenState extends State<MainMapScreen> {
     required bool isDark,
   }) {
     return Material(
-      color: (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+      elevation: 4,
+      shadowColor: Colors.black26,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: IconButton(
