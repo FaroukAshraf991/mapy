@@ -1,9 +1,11 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/auth/services/auth_service.dart';
+import 'package:mapy/features/auth/screens/update_password_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -22,6 +24,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
+  late final StreamSubscription<AuthState> _authSubscription;
 
   bool _savingName = false;
   bool _savingEmail = false;
@@ -44,10 +47,22 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         user?.userMetadata?['full_name'] as String? ?? '';
     _emailController.text = user?.email ?? '';
     _dobString = user?.userMetadata?['date_of_birth'] as String?;
+
+    // Listen for Password Recovery events (integrated from login flow)
+    _authSubscription =
+        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.passwordRecovery) {
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const UpdatePasswordScreen()),
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _authSubscription.cancel();
     _animController.dispose();
     _nameController.dispose();
     _emailController.dispose();
@@ -129,6 +144,23 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       _newPasswordController.clear();
       _confirmPasswordController.clear();
       _showSuccess('Password changed successfully.');
+    }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user?.email == null) {
+      _showError('No user email found.');
+      return;
+    }
+    
+    final error = await AuthService.resetPassword(user!.email!);
+    if (!mounted) return;
+    
+    if (error == null) {
+      _showSuccess('Password reset link sent to ${user.email}!');
+    } else {
+      _showError(error);
     }
   }
 
@@ -462,6 +494,23 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                       onPressed: _changePassword,
                       isDark: isDark,
                       isDestructive: true,
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _handleForgotPassword,
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.6)
+                                : AppConstants.darkBackground.withOpacity(0.5),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
