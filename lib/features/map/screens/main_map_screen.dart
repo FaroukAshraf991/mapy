@@ -611,7 +611,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Good Morning, ${widget.userName}!',
+                    'Good Morning, ${widget.userName.split(' ')[0]}!',
                     style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
