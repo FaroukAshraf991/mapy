@@ -402,7 +402,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
             child: Column(
               children: [
                 Material(
-                  color: isDark ? primaryBgColor : Colors.white,
+                  color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(32),
                   elevation: 6,
                   shadowColor: Colors.black26,
@@ -624,9 +624,8 @@ class _MainMapScreenState extends State<MainMapScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark
-                    ? primaryBgColor.withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.95),
+                color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
+                    .withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: const [
                   BoxShadow(
@@ -683,7 +682,8 @@ class _MainMapScreenState extends State<MainMapScreen> {
     required bool isDark,
   }) {
     return Material(
-      color: isDark ? AppConstants.darkBackground.withValues(alpha: 0.8) : Colors.white,
+      color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
+          .withValues(alpha: 0.9),
       borderRadius: BorderRadius.circular(24),
       elevation: 4,
       shadowColor: Colors.black12,
