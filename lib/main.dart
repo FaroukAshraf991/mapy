@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/auth/screens/login_screen.dart';
+import 'package:mapy/features/map/screens/main_map_screen.dart';
 
 // Global single source of truth for app theme
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
@@ -20,11 +21,23 @@ void main() async {
   final isDark = prefs.getBool('isDarkTheme') ?? false;
   themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
 
-  runApp(const MapyApp());
+  // Check for an existing session to skip the login screen
+  final session = Supabase.instance.client.auth.currentSession;
+  Widget homeScreen;
+  if (session != null) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final userName = user?.userMetadata?['full_name'] as String? ?? 'User';
+    homeScreen = MainMapScreen(userName: userName);
+  } else {
+    homeScreen = const LoginScreen();
+  }
+
+  runApp(MapyApp(homeScreen: homeScreen));
 }
 
 class MapyApp extends StatelessWidget {
-  const MapyApp({super.key});
+  final Widget homeScreen;
+  const MapyApp({super.key, required this.homeScreen});
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +57,7 @@ class MapyApp extends StatelessWidget {
             scaffoldBackgroundColor: const Color(0xFF121212),
           ),
           themeMode: currentMode,
-          home: const LoginScreen(),
+          home: homeScreen,
         );
       },
     );

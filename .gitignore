@@ -44,3 +44,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 \n# Mapy secrets — never commit this\nlib/core/config/secrets.dart
+# Mapy secrets
+lib/core/config/secrets.dart

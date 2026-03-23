@@ -69,4 +69,11 @@ class AuthService {
       return e.toString();
     }
   }
+
+  // ── Sign Out ──────────────────────────────────────────────────────────────
+
+  /// Signs the current user out, clearing the persisted session.
+  static Future<void> signOut() async {
+    await _supabase.auth.signOut();
+  }
 }

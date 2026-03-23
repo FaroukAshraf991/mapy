@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mapy/main.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/services/profile_service.dart';
+import 'package:mapy/features/auth/services/auth_service.dart';
+import 'package:mapy/features/auth/screens/login_screen.dart';
 
 class MainDrawer extends StatefulWidget {
   final String userName;
@@ -265,6 +267,36 @@ class _MainDrawerState extends State<MainDrawer> {
                   ),
                 );
               },
+            ),
+
+            // ── Logout Button ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    await AuthService.signOut();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.logout_rounded, size: 20),
+                  label: const Text('Logout',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
+                    foregroundColor: Colors.redAccent,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
           ],
