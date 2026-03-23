@@ -137,4 +137,19 @@ class AuthService {
       return e.toString();
     }
   }
+
+  /// Updates the user's date of birth in Supabase Auth metadata.
+  /// Typically used once for users who didn't set it during registration.
+  static Future<String?> updateDOB(String dob) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(data: {'date_of_birth': dob}),
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
 }

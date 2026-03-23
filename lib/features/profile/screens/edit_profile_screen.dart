@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/auth/services/auth_service.dart';
@@ -25,7 +26,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   bool _savingName = false;
   bool _savingEmail = false;
   bool _savingPassword = false;
+  bool _savingDOB = false;
   String? _dobString;
+  DateTime? _tempDOB;
 
   @override
   void initState() {
@@ -129,6 +132,41 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     }
   }
 
+  // ── DOB (One-time update) ───────────────────────────────────────────────
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000, 1, 1),
+      firstDate: DateTime(1920),
+      lastDate: DateTime.now(),
+      helpText: 'Select your date of birth',
+    );
+    if (picked != null) {
+      setState(() => _tempDOB = picked);
+    }
+  }
+
+  Future<void> _saveDOB() async {
+    if (_tempDOB == null) {
+      _showError('Please select a date first.');
+      return;
+    }
+    setState(() => _savingDOB = true);
+    final dobStr = DateFormat('yyyy-MM-dd').format(_tempDOB!);
+    final error = await AuthService.updateDOB(dobStr);
+    if (!mounted) return;
+    setState(() => _savingDOB = false);
+    if (error != null) {
+      _showError(error);
+    } else {
+      setState(() {
+        _dobString = dobStr; // Make it read-only now
+      });
+      _showSuccess('Date of Birth updated successfully.');
+    }
+  }
+
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg), backgroundColor: Colors.redAccent));
@@ -199,8 +237,10 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   ],
                 ),
 
-                if (_dobString != null) ...[
-                  const SizedBox(height: 20),
+                const SizedBox(height: 20),
+
+                // ── Date of Birth Section ─────────────────────────────────
+                if (_dobString != null)
                   _buildSection(
                     title: 'Personal Info',
                     icon: Icons.cake_rounded,
@@ -275,8 +315,74 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                             fontStyle: FontStyle.italic),
                       ),
                     ],
+                  )
+                else
+                  _buildSection(
+                    title: 'Set Date of Birth',
+                    icon: Icons.cake_rounded,
+                    iconColor: Colors.purpleAccent,
+                    cardColor: cardColor,
+                    borderColor: borderColor,
+                    isDark: isDark,
+                    textColor: textColor,
+                    children: [
+                      Text(
+                        'Your birth date is missing. Please set it once to complete your profile.',
+                        style: TextStyle(
+                            fontSize: 13, color: textColor.withOpacity(0.6)),
+                      ),
+                      const SizedBox(height: 16),
+                      GestureDetector(
+                        onTap: _pickDate,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.2)
+                                    : Colors.grey.shade300,
+                                width: 1),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today_rounded,
+                                  color:
+                                      isDark ? Colors.white70 : Colors.black87,
+                                  size: 20),
+                              const SizedBox(width: 12),
+                              Text(
+                                _tempDOB != null
+                                    ? DateFormat('MMMM d, yyyy')
+                                        .format(_tempDOB!)
+                                    : 'Pick Birthday',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: _tempDOB != null
+                                        ? (isDark
+                                            ? Colors.white
+                                            : Colors.black87)
+                                        : (isDark
+                                            ? Colors.white.withOpacity(0.4)
+                                            : Colors.black38)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildActionButton(
+                        label: 'Save Date of Birth',
+                        isLoading: _savingDOB,
+                        onPressed: _saveDOB,
+                        isDark: isDark,
+                      ),
+                    ],
                   ),
-                ],
 
                 const SizedBox(height: 20),
 
