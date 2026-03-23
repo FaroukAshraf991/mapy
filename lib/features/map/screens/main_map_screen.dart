@@ -593,6 +593,30 @@ class _MainMapScreenState extends State<MainMapScreen> {
 
 
 
+          // Floating Map Actions (Above Bottom Bar)
+          Positioned(
+            right: 16,
+            bottom: 115, // Just above the bottom container
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _mapActionButton(
+                  icon: _isSatellite ? Icons.map : Icons.satellite_alt,
+                  onPressed: _toggleSatellite,
+                  color: Colors.blueAccent,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 8),
+                _mapActionButton(
+                  icon: Icons.my_location,
+                  onPressed: _relocateMe,
+                  color: Colors.green,
+                  isDark: isDark,
+                ),
+              ],
+            ),
+          ),
+
           // Bottom bar
           Positioned(
             left: 16, right: 16, bottom: 40,
@@ -613,35 +637,14 @@ class _MainMapScreenState extends State<MainMapScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Good Morning, ${widget.userName}!',
-                          style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: isDark
-                                  ? Colors.white
-                                  : AppConstants.darkBackground),
-                        ),
-                      ),
-                      // Satellite Toggle
-                      _mapActionButton(
-                        icon: _isSatellite ? Icons.map : Icons.satellite_alt,
-                        onPressed: _toggleSatellite,
-                        color: Colors.blueAccent,
-                        isDark: isDark,
-                      ),
-                      const SizedBox(width: 8),
-                      // Relocate Button
-                      _mapActionButton(
-                        icon: Icons.my_location,
-                        onPressed: _relocateMe,
-                        color: Colors.green,
-                        isDark: isDark,
-                      ),
-                    ],
+                  Text(
+                    'Good Morning, ${widget.userName}!',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? Colors.white
+                            : AppConstants.darkBackground),
                   ),
                 ],
               ),
