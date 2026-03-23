@@ -476,6 +476,46 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+                // Horizontal Shortcuts (Home, Work, etc.)
+                SizedBox(
+                  height: 44,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      children: [
+                        _locationChip(
+                          type: 'home',
+                          icon: Icons.home_rounded,
+                          label: 'Home',
+                          isSet: _homeLocation != null,
+                          activeColor: Colors.blue,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(width: 8),
+                        _locationChip(
+                          type: 'work',
+                          icon: Icons.work_rounded,
+                          label: 'Work',
+                          isSet: _workLocation != null,
+                          activeColor: Colors.orange,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(width: 8),
+                        // Future shortcuts can be added here easily
+                        _locationChip(
+                          type: 'recent',
+                          icon: Icons.history_rounded,
+                          label: 'Recent',
+                          isSet: false, // Placeholder
+                          activeColor: Colors.purple,
+                          isDark: isDark,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 if (hasRoute)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -608,26 +648,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
                             ? Colors.white
                             : AppConstants.darkBackground),
                   ),
-                  const SizedBox(height: 16),
-                  Row(children: [
-                    Expanded(
-                        child: _locationButton(
-                            type: 'home',
-                            icon: Icons.home_rounded,
-                            label: 'Home',
-                            isSet: _homeLocation != null,
-                            activeColor: Colors.blue,
-                            isDark: isDark)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                        child: _locationButton(
-                            type: 'work',
-                            icon: Icons.work_rounded,
-                            label: 'Work',
-                            isSet: _workLocation != null,
-                            activeColor: Colors.orange,
-                            isDark: isDark)),
-                  ]),
                 ],
               ),
             ),
@@ -654,7 +674,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     ]);
   }
 
-  Widget _locationButton({
+  Widget _locationChip({
     required String type,
     required IconData icon,
     required String label,
@@ -662,44 +682,53 @@ class _MainMapScreenState extends State<MainMapScreen> {
     required Color activeColor,
     required bool isDark,
   }) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _handleLocationButton(type),
-            icon: Icon(icon, color: activeColor),
-            label: Text(label),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : activeColor.withValues(alpha: 0.08),
-              foregroundColor: activeColor,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
+    return Material(
+      color: isDark ? AppConstants.darkBackground.withValues(alpha: 0.8) : Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      elevation: 4,
+      shadowColor: Colors.black12,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          if (type == 'recent') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Recent places coming soon!')),
+            );
+          } else {
+            _handleLocationButton(type);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: isSet ? activeColor : (isDark ? Colors.white38 : Colors.black38), size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : AppConstants.darkBackground,
+                ),
+              ),
+              if (isSet)
+                Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        if (isSet)
-          Positioned(
-            top: -4, right: -4,
-            child: Container(
-              width: 14, height: 14,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-                border: Border.all(
-                    color: isDark
-                        ? AppConstants.darkBackground
-                        : Colors.white,
-                    width: 2),
-              ),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
