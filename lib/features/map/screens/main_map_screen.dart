@@ -9,6 +9,7 @@ import 'package:mapy/features/map/widgets/main_drawer.dart';
 import 'package:mapy/models/place_result.dart';
 import 'package:mapy/services/geocoding_service.dart';
 import 'package:mapy/services/profile_service.dart';
+import 'package:mapy/features/map/widgets/map_widgets.dart';
 
 class MainMapScreen extends StatefulWidget {
   final String userName;
@@ -376,7 +377,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                 if (_workLocation != null)
                   Marker(
                       point: _workLocation!,
-                      width: 44, height: 44,
+      width: 44, height: 44,
                       child: const Icon(Icons.work,
                           color: Colors.orange, size: 44)),
                 if (_destinationLocation != null)
@@ -408,168 +409,86 @@ class _MainMapScreenState extends State<MainMapScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Material(
-                  color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(32),
-                  elevation: 6,
-                  shadowColor: Colors.black26,
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: _onWhereToTapped,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        children: [
-                          Icon(Icons.search,
-                              color: isDark ? Colors.white70 : Colors.black54, size: 22),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              'Search here',
-                              style: TextStyle(
-                                fontSize: 17,
-                                color: isDark ? Colors.white70 : Colors.black54,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          if (_isRouting)
-                            const Padding(
-                              padding: EdgeInsets.only(right: 12),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.blueAccent),
-                              ),
-                            ),
-                          // User Profile Avatar / Menu Button
-                          Builder(
-                            builder: (innerContext) => GestureDetector(
-                              onTap: () => Scaffold.of(innerContext).openDrawer(),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isDark ? Colors.white12 : Colors.grey.shade200,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: CircleAvatar(
-                                  radius: 17,
-                                  backgroundColor: isDark 
-                                      ? Colors.white10 
-                                      : Colors.blue.shade50,
-                                  backgroundImage: _avatarUrl != null
-                                      ? NetworkImage(_avatarUrl!)
-                                      : null,
-                                  child: _avatarUrl == null
-                                      ? Text(
-                                          widget.userName.isNotEmpty
-                                              ? widget.userName[0].toUpperCase()
-                                              : 'U',
-                                          style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: isDark ? Colors.white : Colors.blue.shade700),
-                                        )
-                                      : null,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                MapSearchBar(
+                  isDark: isDark,
+                  isRouting: _isRouting,
+                  avatarUrl: _avatarUrl,
+                  onSearchTap: _onWhereToTapped,
+                  onAvatarTap: () => Scaffold.of(context).openDrawer(),
                 ),
-                const SizedBox(height: 6), // Further reduced margin
+                const SizedBox(height: 6),
                 // Horizontal Shortcuts (Home, Work, etc.)
                 SizedBox(
                   height: 44,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    clipBehavior: Clip.antiAlias, // Ensure it doesn't exceed search bar edges
+                    clipBehavior: Clip.antiAlias,
                     padding: EdgeInsets.zero,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        _locationChip(
+                        LocationChip(
                           type: 'recent',
                           icon: Icons.history_rounded,
                           label: 'Recent',
-                          isSet: false, // Placeholder
+                          isSet: false,
                           activeColor: Colors.purple,
                           isDark: isDark,
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Recent places coming soon!')),
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        _locationChip(
+                        LocationChip(
                           type: 'home',
                           icon: Icons.home_rounded,
                           label: 'Home',
                           isSet: _homeLocation != null,
                           activeColor: Colors.blue,
                           isDark: isDark,
+                          onTap: () => _handleLocationButton('home'),
                         ),
                         const SizedBox(width: 8),
-                        _locationChip(
+                        LocationChip(
                           type: 'work',
                           icon: Icons.work_rounded,
                           label: 'Work',
                           isSet: _workLocation != null,
                           activeColor: Colors.orange,
                           isDark: isDark,
+                          onTap: () => _handleLocationButton('work'),
                         ),
                         ..._customPins.map((pin) => Padding(
                           padding: const EdgeInsets.only(left: 8),
-                          child: _locationChip(
+                          child: LocationChip(
                             type: 'custom',
                             icon: Icons.place_rounded,
                             label: pin['label'],
                             isSet: true,
                             activeColor: Colors.teal,
                             isDark: isDark,
+                            onTap: () => _navigateTo(LatLng(pin['lat'], pin['lon'])),
                             onLongPress: () => _deleteCustomPin(pin),
-                            customLocation: LatLng(pin['lat'], pin['lon']),
                           ),
                         )),
                         const SizedBox(width: 8),
-                        _addShortcutButton(isDark),
+                        AddShortcutButton(
+                          isDark: isDark,
+                          onTap: _addCustomPin,
+                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Layers Button
+                // Layers Button (Right Aligned, Icon Only)
                 Align(
-                  alignment: Alignment.centerLeft,
-                  child: Material(
-                    color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100).withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(24),
-                    elevation: 4,
-                    shadowColor: Colors.black12,
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: _showLayersMenu,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.layers_rounded, color: isDark ? Colors.white70 : Colors.black54, size: 20),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Layers',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  alignment: Alignment.centerRight,
+                  child: MapActionButton(
+                    icon: Icons.layers_rounded,
+                    onPressed: _showLayersMenu,
+                    color: Colors.blueAccent,
+                    isDark: isDark,
                   ),
                 ),
                 if (hasRoute)
@@ -626,7 +545,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _infoChip(
+                    MapInfoChip(
                       icon: Icons.straighten_rounded,
                       color: Colors.blueAccent,
                       label: _routeInfo.distanceText,
@@ -638,7 +557,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 20),
                       color: isDark ? Colors.white12 : Colors.black12,
                     ),
-                    _infoChip(
+                    MapInfoChip(
                       icon: Icons.timer_rounded,
                       color: Colors.green,
                       label: _routeInfo.etaText,
@@ -657,7 +576,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _mapActionButton(
+                MapActionButton(
                   icon: Icons.my_location,
                   onPressed: _relocateMe,
                   color: Colors.green,
@@ -701,139 +620,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _infoChip({
-    required IconData icon,
-    required Color color,
-    required String label,
-    required bool isDark,
-  }) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, color: color, size: 22),
-      const SizedBox(width: 8),
-      Text(label,
-          style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : AppConstants.darkBackground)),
-    ]);
-  }
-
-  Widget _mapActionButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    required Color color,
-    required bool isDark,
-  }) {
-    return Material(
-      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-      elevation: 4,
-      shadowColor: Colors.black26,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: IconButton(
-        icon: Icon(icon, color: color, size: 22),
-        onPressed: onPressed,
-        padding: const EdgeInsets.all(10),
-        constraints: const BoxConstraints(),
-      ),
-    );
-  }
-
-  Widget _locationChip({
-    required String type,
-    required IconData icon,
-    required String label,
-    required bool isSet,
-    required Color activeColor,
-    required bool isDark,
-    VoidCallback? onLongPress,
-    LatLng? customLocation,
-  }) {
-    return Material(
-      color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
-          .withValues(alpha: 0.9),
-      borderRadius: BorderRadius.circular(24),
-      elevation: 4,
-      shadowColor: Colors.black12,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          if (type == 'recent') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Recent places coming soon!')),
-            );
-          } else if (type == 'custom' && customLocation != null) {
-            _navigateTo(customLocation);
-          } else {
-            _handleLocationButton(type);
-          }
-        },
-        onLongPress: onLongPress,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: isSet ? activeColor : (isDark ? Colors.white38 : Colors.black38), size: 18),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : AppConstants.darkBackground,
-                ),
-              ),
-              if (isSet && type != 'custom')
-                Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _addShortcutButton(bool isDark) {
-    return Material(
-      color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100).withValues(alpha: 0.9),
-      borderRadius: BorderRadius.circular(24),
-      elevation: 4,
-      shadowColor: Colors.black12,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: _addCustomPin,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_rounded, color: isDark ? Colors.white70 : Colors.black54, size: 20),
-              const SizedBox(width: 4),
-              Text(
-                'Add',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white70 : Colors.black54,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -908,65 +694,13 @@ class _MainMapScreenState extends State<MainMapScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Map Style', 
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _layerOption(MapStyle.street, 'Default', Icons.map_rounded),
-                _layerOption(MapStyle.satellite, 'Satellite', Icons.satellite_alt_rounded),
-                _layerOption(MapStyle.terrain, 'Terrain', Icons.terrain_rounded),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _layerOption(MapStyle style, String label, IconData icon) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isSelected = _currentStyle == style;
-    
-    return GestureDetector(
-      onTap: () {
-        _setMapStyle(style);
-        Navigator.pop(context);
-      },
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isSelected 
-                ? Colors.blueAccent.withValues(alpha: 0.1) 
-                : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected ? Colors.blueAccent : Colors.transparent,
-                width: 2,
-              ),
-            ),
-            child: Icon(icon, color: isSelected ? Colors.blueAccent : (isDark ? Colors.white70 : Colors.black54), size: 32),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(
-            fontSize: 13, 
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? Colors.blueAccent : (isDark ? Colors.white70 : Colors.black54),
-          )),
-        ],
+      builder: (context) => MapLayerSelector(
+        currentStyle: _currentStyle,
+        isDark: isDark,
+        onStyleSelected: (style) {
+          _setMapStyle(style);
+          Navigator.pop(context);
+        },
       ),
     );
   }
