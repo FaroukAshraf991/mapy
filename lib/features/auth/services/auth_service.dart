@@ -76,4 +76,65 @@ class AuthService {
   static Future<void> signOut() async {
     await _supabase.auth.signOut();
   }
+
+  // ── Profile Updates ───────────────────────────────────────────────────────
+
+  /// Updates the user's display name in Supabase Auth metadata.
+  /// Returns an error message on failure, or null on success.
+  static Future<String?> updateName(String newName) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(data: {'full_name': newName}),
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  /// Updates the user's email. Supabase will send a verification email
+  /// to the new address. Returns an error message on failure, or null on success.
+  static Future<String?> updateEmail(String newEmail) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(email: newEmail),
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  /// Changes the user's password. Requires the current password for security.
+  /// Re-authenticates with the old password first, then updates.
+  /// Returns an error message on failure, or null on success.
+  static Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final email = _supabase.auth.currentUser?.email;
+      if (email == null) return 'No user is signed in.';
+
+      // Re-authenticate with current password
+      await _supabase.auth.signInWithPassword(
+        email: email,
+        password: currentPassword,
+      );
+
+      // Update to new password
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
 }

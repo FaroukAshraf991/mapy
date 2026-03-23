@@ -8,12 +8,16 @@ class AuthService {
     required String name,
     required String email,
     required String password,
+    String? dateOfBirth,
   }) async {
     try {
+      final metadata = <String, dynamic>{'full_name': name};
+      if (dateOfBirth != null) metadata['date_of_birth'] = dateOfBirth;
+
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
-        data: {'full_name': name},
+        data: metadata,
       );
       // Return null on success (no error string)
       if (response.user != null) return null;

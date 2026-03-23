@@ -7,6 +7,7 @@ import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/services/profile_service.dart';
 import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/screens/login_screen.dart';
+import 'package:mapy/features/profile/screens/edit_profile_screen.dart';
 
 class MainDrawer extends StatefulWidget {
   final String userName;
@@ -219,6 +220,18 @@ class _MainDrawerState extends State<MainDrawer> {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Settings coming soon!')));
+              },
+            ),
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.edit_rounded,
+              title: 'Edit Profile',
+              isDark: isDark,
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                );
               },
             ),
 
