@@ -314,8 +314,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryBgColor =
-        isDark ? AppConstants.darkBackground : AppConstants.lightBackground;
     final bool hasRoute = _destinationLocation != null;
 
     return Scaffold(
@@ -593,30 +591,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
               ),
             ),
 
-          // FABs
-          Positioned(
-            right: 16, bottom: 250,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton(
-                  heroTag: 'sat_btn',
-                  onPressed: _toggleSatellite,
-                  backgroundColor: isDark ? primaryBgColor : Colors.white,
-                  child: Icon(
-                      _isSatellite ? Icons.map : Icons.satellite_alt,
-                      color: Colors.blueAccent),
-                ),
-                const SizedBox(height: 16),
-                FloatingActionButton(
-                  heroTag: 'relocate_btn_main',
-                  onPressed: _relocateMe,
-                  backgroundColor: isDark ? primaryBgColor : Colors.white,
-                  child: const Icon(Icons.my_location, color: Colors.green),
-                ),
-              ],
-            ),
-          ),
+
 
           // Bottom bar
           Positioned(
@@ -638,14 +613,35 @@ class _MainMapScreenState extends State<MainMapScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Good Morning, ${widget.userName}!',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? Colors.white
-                            : AppConstants.darkBackground),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Good Morning, ${widget.userName}!',
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppConstants.darkBackground),
+                        ),
+                      ),
+                      // Satellite Toggle
+                      _mapActionButton(
+                        icon: _isSatellite ? Icons.map : Icons.satellite_alt,
+                        onPressed: _toggleSatellite,
+                        color: Colors.blueAccent,
+                        isDark: isDark,
+                      ),
+                      const SizedBox(width: 8),
+                      // Relocate Button
+                      _mapActionButton(
+                        icon: Icons.my_location,
+                        onPressed: _relocateMe,
+                        color: Colors.green,
+                        isDark: isDark,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -671,6 +667,25 @@ class _MainMapScreenState extends State<MainMapScreen> {
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : AppConstants.darkBackground)),
     ]);
+  }
+
+  Widget _mapActionButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Material(
+      color: (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: IconButton(
+        icon: Icon(icon, color: color, size: 22),
+        onPressed: onPressed,
+        padding: const EdgeInsets.all(10),
+        constraints: const BoxConstraints(),
+      ),
+    );
   }
 
   Widget _locationChip({
