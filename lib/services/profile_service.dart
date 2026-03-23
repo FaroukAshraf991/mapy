@@ -1,0 +1,107 @@
+import 'dart:io';
+import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Handles reading and writing the user's profile (Home/Work locations +
+/// avatar) to the `profiles` table and `avatars` Supabase Storage bucket.
+class ProfileService {
+  static final _client = Supabase.instance.client;
+
+  static String? get _uid => _client.auth.currentUser?.id;
+
+  // ── Read ──────────────────────────────────────────────────────────────────
+
+  static Future<({LatLng? home, LatLng? work, String? avatarUrl})>
+      loadProfile() async {
+    final uid = _uid;
+    if (uid == null) return (home: null, work: null, avatarUrl: null);
+
+    try {
+      final data = await _client
+          .from('profiles')
+          .select('home_lat, home_lon, work_lat, work_lon, avatar_url')
+          .eq('id', uid)
+          .maybeSingle();
+
+      if (data == null) return (home: null, work: null, avatarUrl: null);
+
+      return (
+        home: _parseLatLng(data['home_lat'], data['home_lon']),
+        work: _parseLatLng(data['work_lat'], data['work_lon']),
+        avatarUrl: data['avatar_url'] as String?,
+      );
+    } catch (_) {
+      return (home: null, work: null, avatarUrl: null);
+    }
+  }
+
+  // ── Location Write ────────────────────────────────────────────────────────
+
+  static Future<void> saveHomeLocation(LatLng loc) async {
+    await _upsert({'home_lat': loc.latitude, 'home_lon': loc.longitude});
+  }
+
+  static Future<void> saveWorkLocation(LatLng loc) async {
+    await _upsert({'work_lat': loc.latitude, 'work_lon': loc.longitude});
+  }
+
+  static Future<void> clearHomeLocation() async {
+    await _upsert({'home_lat': null, 'home_lon': null});
+  }
+
+  static Future<void> clearWorkLocation() async {
+    await _upsert({'work_lat': null, 'work_lon': null});
+  }
+
+  // ── Avatar ────────────────────────────────────────────────────────────────
+
+  /// Uploads [image] to Supabase Storage and returns the public URL,
+  /// or null on failure.
+  static Future<String?> uploadAvatar(File image) async {
+    final uid = _uid;
+    if (uid == null) return null;
+
+    try {
+      final bytes = await image.readAsBytes();
+      final path = '$uid/avatar.jpg';
+
+      await _client.storage.from('avatars').uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+
+      final url = _client.storage.from('avatars').getPublicUrl(path);
+
+      // Cache busting: append a timestamp so the widget re-fetches the image
+      final bustUrl = '$url?t=${DateTime.now().millisecondsSinceEpoch}';
+
+      await _upsert({'avatar_url': bustUrl});
+      return bustUrl;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Private helpers ───────────────────────────────────────────────────────
+
+  static Future<void> _upsert(Map<String, dynamic> fields) async {
+    final uid = _uid;
+    if (uid == null) return;
+    try {
+      await _client.from('profiles').upsert({
+        'id': uid,
+        'updated_at': DateTime.now().toIso8601String(),
+        ...fields,
+      });
+    } catch (_) {}
+  }
+
+  static LatLng? _parseLatLng(dynamic lat, dynamic lon) {
+    if (lat == null || lon == null) return null;
+    return LatLng((lat as num).toDouble(), (lon as num).toDouble());
+  }
+}
