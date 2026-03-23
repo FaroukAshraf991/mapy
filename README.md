@@ -4,6 +4,18 @@ A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM
 
 ---
 
+## Screenshots
+
+| Login | Map (Dark Mode) |
+|:---:|:---:|
+| ![Login](screenshots/login.png) | ![Map](screenshots/map.png) |
+
+| Search | Route + ETA |
+|:---:|:---:|
+| ![Search](screenshots/search.png) | ![Route](screenshots/route.png) |
+
+---
+
 ## What is Mapy?
 
 **Mapy** is a private, cloud-connected maps and navigation application built with **Flutter** for Android. It gives users a fully personal map experience — from secure login to saving home/work locations in the cloud, searching any real-world address, and drawing road-following routes with live ETA and distance estimates. Every piece of data is private to each user, stored securely in **Supabase** (a cloud Postgres database).
