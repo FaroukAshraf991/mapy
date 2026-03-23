@@ -26,6 +26,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
   LatLng? _homeLocation;
   LatLng? _workLocation;
   String? _avatarUrl;
+  List<Map<String, dynamic>> _customPins = [];
 
   // ── Destination & Routing ─────────────────────────────────────────────────
   LatLng? _destinationLocation;
@@ -52,6 +53,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
       _homeLocation = profile.home;
       _workLocation = profile.work;
       _avatarUrl = profile.avatarUrl;
+      _customPins = profile.customPins;
     });
   }
 
@@ -484,6 +486,15 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     child: Row(
                       children: [
                         _locationChip(
+                          type: 'recent',
+                          icon: Icons.history_rounded,
+                          label: 'Recent',
+                          isSet: false, // Placeholder
+                          activeColor: Colors.purple,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(width: 8),
+                        _locationChip(
                           type: 'home',
                           icon: Icons.home_rounded,
                           label: 'Home',
@@ -500,16 +511,21 @@ class _MainMapScreenState extends State<MainMapScreen> {
                           activeColor: Colors.orange,
                           isDark: isDark,
                         ),
+                        ..._customPins.map((pin) => Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: _locationChip(
+                            type: 'custom',
+                            icon: Icons.place_rounded,
+                            label: pin['label'],
+                            isSet: true,
+                            activeColor: Colors.teal,
+                            isDark: isDark,
+                            onLongPress: () => _deleteCustomPin(pin),
+                            customLocation: LatLng(pin['lat'], pin['lon']),
+                          ),
+                        )),
                         const SizedBox(width: 8),
-                        // Future shortcuts can be added here easily
-                        _locationChip(
-                          type: 'recent',
-                          icon: Icons.history_rounded,
-                          label: 'Recent',
-                          isSet: false, // Placeholder
-                          activeColor: Colors.purple,
-                          isDark: isDark,
-                        ),
+                        _addShortcutButton(isDark),
                       ],
                     ),
                   ),
@@ -700,6 +716,8 @@ class _MainMapScreenState extends State<MainMapScreen> {
     required bool isSet,
     required Color activeColor,
     required bool isDark,
+    VoidCallback? onLongPress,
+    LatLng? customLocation,
   }) {
     return Material(
       color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
@@ -714,10 +732,13 @@ class _MainMapScreenState extends State<MainMapScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Recent places coming soon!')),
             );
+          } else if (type == 'custom' && customLocation != null) {
+            _navigateTo(customLocation);
           } else {
             _handleLocationButton(type);
           }
         },
+        onLongPress: onLongPress,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(
@@ -733,7 +754,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                   color: isDark ? Colors.white : AppConstants.darkBackground,
                 ),
               ),
-              if (isSet)
+              if (isSet && type != 'custom')
                 Padding(
                   padding: const EdgeInsets.only(left: 6),
                   child: Container(
@@ -750,5 +771,101 @@ class _MainMapScreenState extends State<MainMapScreen> {
         ),
       ),
     );
+  }
+
+  Widget _addShortcutButton(bool isDark) {
+    return Material(
+      color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100).withValues(alpha: 0.9),
+      borderRadius: BorderRadius.circular(24),
+      elevation: 4,
+      shadowColor: Colors.black12,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: _addCustomPin,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, color: isDark ? Colors.white70 : Colors.black54, size: 20),
+              const SizedBox(width: 4),
+              Text(
+                'Add',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addCustomPin() async {
+    final String? label = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Add Favorite Place'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'e.g. Grandma\'s House'),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Next'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (label == null || label.isEmpty) return;
+
+    if (!mounted) return;
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(builder: (context) => const PickLocationScreen(title: 'Pick Favorite Location')),
+    );
+
+    if (result != null) {
+      final newPin = {'label': label, 'lat': result.latitude, 'lon': result.longitude};
+      setState(() {
+        _customPins = [..._customPins, newPin];
+      });
+      await ProfileService.saveCustomPins(_customPins);
+    }
+  }
+
+  Future<void> _deleteCustomPin(Map<String, dynamic> pin) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Shortcut?'),
+        content: Text('Do you want to remove "${pin['label']}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() {
+        _customPins.remove(pin);
+        _customPins = [..._customPins];
+      });
+      await ProfileService.saveCustomPins(_customPins);
+    }
   }
 }

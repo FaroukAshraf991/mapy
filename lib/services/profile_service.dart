@@ -11,27 +11,28 @@ class ProfileService {
 
   // ── Read ──────────────────────────────────────────────────────────────────
 
-  static Future<({LatLng? home, LatLng? work, String? avatarUrl})>
+  static Future<({LatLng? home, LatLng? work, String? avatarUrl, List<Map<String, dynamic>> customPins})>
       loadProfile() async {
     final uid = _uid;
-    if (uid == null) return (home: null, work: null, avatarUrl: null);
+    if (uid == null) return (home: null, work: null, avatarUrl: null, customPins: <Map<String, dynamic>>[]);
 
     try {
       final data = await _client
           .from('profiles')
-          .select('home_lat, home_lon, work_lat, work_lon, avatar_url')
+          .select('home_lat, home_lon, work_lat, work_lon, avatar_url, custom_pins')
           .eq('id', uid)
           .maybeSingle();
 
-      if (data == null) return (home: null, work: null, avatarUrl: null);
+      if (data == null) return (home: null, work: null, avatarUrl: null, customPins: <Map<String, dynamic>>[]);
 
       return (
         home: _parseLatLng(data['home_lat'], data['home_lon']),
         work: _parseLatLng(data['work_lat'], data['work_lon']),
         avatarUrl: data['avatar_url'] as String?,
+        customPins: List<Map<String, dynamic>>.from(data['custom_pins'] ?? []),
       );
     } catch (_) {
-      return (home: null, work: null, avatarUrl: null);
+      return (home: null, work: null, avatarUrl: null, customPins: <Map<String, dynamic>>[]);
     }
   }
 
@@ -51,6 +52,10 @@ class ProfileService {
 
   static Future<void> clearWorkLocation() async {
     await _upsert({'work_lat': null, 'work_lon': null});
+  }
+
+  static Future<void> saveCustomPins(List<Map<String, dynamic>> pins) async {
+    await _upsert({'custom_pins': pins});
   }
 
   // ── Avatar ────────────────────────────────────────────────────────────────
