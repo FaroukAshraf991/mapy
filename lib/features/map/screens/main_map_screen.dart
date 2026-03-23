@@ -409,12 +409,14 @@ class _MainMapScreenState extends State<MainMapScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                MapSearchBar(
-                  isDark: isDark,
-                  isRouting: _isRouting,
-                  avatarUrl: _avatarUrl,
-                  onSearchTap: _onWhereToTapped,
-                  onAvatarTap: () => Scaffold.of(context).openDrawer(),
+                Builder(
+                  builder: (context) => MapSearchBar(
+                    isDark: isDark,
+                    isRouting: _isRouting,
+                    avatarUrl: _avatarUrl,
+                    onSearchTap: _onWhereToTapped,
+                    onAvatarTap: () => Scaffold.of(context).openDrawer(),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 // Horizontal Shortcuts (Home, Work, etc.)
