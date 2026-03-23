@@ -25,6 +25,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
   LatLng? _currentLocation;
   LatLng? _homeLocation;
   LatLng? _workLocation;
+  String? _avatarUrl;
 
   // ── Destination & Routing ─────────────────────────────────────────────────
   LatLng? _destinationLocation;
@@ -50,6 +51,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     setState(() {
       _homeLocation = profile.home;
       _workLocation = profile.work;
+      _avatarUrl = profile.avatarUrl;
     });
   }
 
@@ -408,17 +410,12 @@ class _MainMapScreenState extends State<MainMapScreen> {
                   child: InkWell(
                     onTap: _onWhereToTapped,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       child: Row(
                         children: [
-                          Builder(
-                            builder: (innerContext) => IconButton(
-                              icon: Icon(Icons.menu,
-                                  color: isDark ? Colors.white : Colors.black87),
-                              onPressed: () => Scaffold.of(innerContext).openDrawer(),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
+                          Icon(Icons.search,
+                              color: isDark ? Colors.white70 : Colors.black54, size: 22),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: Text(
                               'Search here',
@@ -439,15 +436,41 @@ class _MainMapScreenState extends State<MainMapScreen> {
                                     strokeWidth: 2, color: Colors.blueAccent),
                               ),
                             ),
-                          if (!isDark)
-                             Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: CircleAvatar(
-                                radius: 18,
-                                backgroundColor: Colors.blue.shade50,
-                                child: Icon(Icons.search, color: Colors.blue.shade700, size: 20),
+                          // User Profile Avatar / Menu Button
+                          Builder(
+                            builder: (innerContext) => GestureDetector(
+                              onTap: () => Scaffold.of(innerContext).openDrawer(),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 17,
+                                  backgroundColor: isDark 
+                                      ? Colors.white10 
+                                      : Colors.blue.shade50,
+                                  backgroundImage: _avatarUrl != null
+                                      ? NetworkImage(_avatarUrl!)
+                                      : null,
+                                  child: _avatarUrl == null
+                                      ? Text(
+                                          widget.userName.isNotEmpty
+                                              ? widget.userName[0].toUpperCase()
+                                              : 'U',
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDark ? Colors.white : Colors.blue.shade700),
+                                        )
+                                      : null,
+                                ),
                               ),
                             ),
+                          ),
                         ],
                       ),
                     ),
