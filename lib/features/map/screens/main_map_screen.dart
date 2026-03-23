@@ -324,8 +324,10 @@ class _MainMapScreenState extends State<MainMapScreen> {
     final bool hasRoute = _destinationLocation != null;
 
     return Scaffold(
-      drawer: MainDrawer(userName: widget.userName),
-      body: Stack(
+      drawer: MainDrawer(
+        userName: widget.userName,
+        onProfileUpdate: _loadSavedProfile,
+      ),body: Stack(
         children: [
           // Map
           FlutterMap(

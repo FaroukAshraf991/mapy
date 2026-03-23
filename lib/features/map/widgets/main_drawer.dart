@@ -9,8 +9,13 @@ import 'package:mapy/features/profile/screens/edit_profile_screen.dart';
 
 class MainDrawer extends StatefulWidget {
   final String userName;
+  final VoidCallback? onProfileUpdate;
 
-  const MainDrawer({super.key, required this.userName});
+  const MainDrawer({
+    super.key,
+    required this.userName,
+    this.onProfileUpdate,
+  });
 
   @override
   State<MainDrawer> createState() => _MainDrawerState();
@@ -35,7 +40,10 @@ class _MainDrawerState extends State<MainDrawer> {
     Navigator.pop(context);
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-    ).then((_) => _loadAvatar()); // Reload avatar when coming back
+    ).then((_) {
+      _loadAvatar();
+      widget.onProfileUpdate?.call(); // Signal parent (MainMapScreen) to reload
+    });
   }
 
   @override
