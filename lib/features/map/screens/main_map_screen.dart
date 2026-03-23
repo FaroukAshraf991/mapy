@@ -400,6 +400,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
             left: 16,
             right: 16,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Material(
                   color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
@@ -476,14 +477,16 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8), // Reduced margin
+                const SizedBox(height: 6), // Further reduced margin
                 // Horizontal Shortcuts (Home, Work, etc.)
                 SizedBox(
                   height: 44,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.zero, // Aligned with the left edge of the search bar
+                    clipBehavior: Clip.antiAlias, // Ensure it doesn't exceed search bar edges
+                    padding: EdgeInsets.zero,
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         _locationChip(
                           type: 'recent',
