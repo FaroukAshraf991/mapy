@@ -474,13 +474,13 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8), // Reduced margin
                 // Horizontal Shortcuts (Home, Work, etc.)
                 SizedBox(
                   height: 44,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: EdgeInsets.zero, // Aligned with the left edge of the search bar
                     child: Row(
                       children: [
                         _locationChip(
