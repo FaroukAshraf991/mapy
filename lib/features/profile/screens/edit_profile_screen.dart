@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mapy/core/constants/app_constants.dart';
+import 'package:mapy/services/profile_service.dart';
 import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/screens/update_password_screen.dart';
 import 'package:mapy/features/profile/widgets/profile_widgets.dart';
@@ -30,6 +33,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   bool _savingEmail = false;
   bool _savingPassword = false;
   bool _savingDOB = false;
+  bool _uploadingAvatar = false;
+  String? _avatarUrl;
   String? _dobString;
   DateTime? _tempDOB;
 
@@ -46,6 +51,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     _nameController.text = user?.userMetadata?['full_name'] as String? ?? '';
     _emailController.text = user?.email ?? '';
     _dobString = user?.userMetadata?['date_of_birth'] as String?;
+
+    _loadAvatar();
 
     _authSubscription =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) {
@@ -157,6 +164,35 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     }
   }
 
+  Future<void> _loadAvatar() async {
+    final profile = await ProfileService.loadProfile();
+    if (!mounted) return;
+    setState(() => _avatarUrl = profile.avatarUrl);
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final XFile? picked =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked == null || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+
+    final url = await ProfileService.uploadAvatar(File(picked.path));
+
+    if (!mounted) return;
+    setState(() {
+      _avatarUrl = url ?? _avatarUrl;
+      _uploadingAvatar = false;
+    });
+
+    if (url != null) {
+      _showSuccess('Profile picture updated!');
+    } else {
+      _showError('Upload failed. Please try again.');
+    }
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -224,6 +260,105 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               children: [
+                // ── Avatar Section ────────────────────────────────────────
+                Center(
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.blue.shade100,
+                            width: 4,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.grey.shade100,
+                          backgroundImage: _avatarUrl != null
+                              ? NetworkImage(_avatarUrl!)
+                              : null,
+                          child: _avatarUrl == null
+                              ? Text(
+                                  _nameController.text.isNotEmpty
+                                      ? _nameController.text[0].toUpperCase()
+                                      : 'U',
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : AppConstants.darkBackground,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                      if (_uploadingAvatar)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _pickAndUploadAvatar,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: bgColor, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _nameController.text,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
                 // ── Name Section ──────────────────────────────────────────
                 ProfileSectionCard(
                   title: 'Display Name',

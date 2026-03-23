@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mapy/main.dart';
 import 'package:mapy/core/constants/app_constants.dart';
@@ -20,7 +18,6 @@ class MainDrawer extends StatefulWidget {
 
 class _MainDrawerState extends State<MainDrawer> {
   String? _avatarUrl;
-  bool _uploadingAvatar = false;
 
   @override
   void initState() {
@@ -34,39 +31,11 @@ class _MainDrawerState extends State<MainDrawer> {
     setState(() => _avatarUrl = profile.avatarUrl);
   }
 
-  Future<void> _pickAndUploadAvatar() async {
-    final picker = ImagePicker();
-    final XFile? picked =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked == null || !mounted) return;
-
-    setState(() => _uploadingAvatar = true);
-
-    final url = await ProfileService.uploadAvatar(File(picked.path));
-
-    if (!mounted) return;
-    setState(() {
-      _avatarUrl = url ?? _avatarUrl;
-      _uploadingAvatar = false;
-    });
-
-    if (url != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile picture updated ✓'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Upload failed. Please try again.'),
-          backgroundColor: Colors.redAccent,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
+  void _navigateToEditProfile() {
+    Navigator.pop(context);
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+    ).then((_) => _loadAvatar()); // Reload avatar when coming back
   }
 
   @override
@@ -94,66 +63,31 @@ class _MainDrawerState extends State<MainDrawer> {
               ),
               child: Row(
                 children: [
-                  // Avatar with camera overlay
+                  // Avatar
                   GestureDetector(
-                    onTap: _pickAndUploadAvatar,
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 34,
-                          backgroundColor: isDark
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.white,
-                          backgroundImage: _avatarUrl != null
-                              ? NetworkImage(_avatarUrl!)
-                              : null,
-                          child: _avatarUrl == null
-                              ? Text(
-                                  widget.userName.isNotEmpty
-                                      ? widget.userName[0].toUpperCase()
-                                      : 'U',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark
-                                        ? Colors.white
-                                        : AppConstants.darkBackground,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        // Upload indicator
-                        if (_uploadingAvatar)
-                          Positioned.fill(
-                            child: CircleAvatar(
-                              radius: 34,
-                              backgroundColor:
-                                  Colors.black.withValues(alpha: 0.5),
-                              child: const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2),
+                    onTap: _navigateToEditProfile,
+                    child: CircleAvatar(
+                      radius: 34,
+                      backgroundColor: isDark
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.white,
+                      backgroundImage: _avatarUrl != null
+                          ? NetworkImage(_avatarUrl!)
+                          : null,
+                      child: _avatarUrl == null
+                          ? Text(
+                              widget.userName.isNotEmpty
+                                  ? widget.userName[0].toUpperCase()
+                                  : 'U',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppConstants.darkBackground,
                               ),
-                            ),
-                          ),
-                        // Camera icon badge
-                        if (!_uploadingAvatar)
-                          Positioned(
-                            bottom: 0, right: 0,
-                            child: Container(
-                              width: 24, height: 24,
-                              decoration: BoxDecoration(
-                                color: Colors.blueAccent,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: primaryBgColor, width: 2),
-                              ),
-                              child: const Icon(Icons.camera_alt_rounded,
-                                  size: 13, color: Colors.white),
-                            ),
-                          ),
-                      ],
+                            )
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 20),
@@ -172,9 +106,9 @@ class _MainDrawerState extends State<MainDrawer> {
                         ),
                         const SizedBox(height: 4),
                         GestureDetector(
-                          onTap: _pickAndUploadAvatar,
+                          onTap: _navigateToEditProfile,
                           child: Text(
-                            'Change photo',
+                            'Edit Profile',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -222,18 +156,7 @@ class _MainDrawerState extends State<MainDrawer> {
                     const SnackBar(content: Text('Settings coming soon!')));
               },
             ),
-            _buildDrawerItem(
-              context: context,
-              icon: Icons.edit_rounded,
-              title: 'Edit Profile',
-              isDark: isDark,
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-                );
-              },
-            ),
+
 
             const Spacer(),
 
