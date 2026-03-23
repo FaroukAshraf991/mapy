@@ -392,51 +392,98 @@ class _MainMapScreenState extends State<MainMapScreen> {
               ),
             ),
 
-          // Menu button
+          // Floating Search Header (Top)
           Positioned(
-            top: 60, left: 16,
-            child: Material(
-              color: isDark ? primaryBgColor : Colors.white,
-              shape: const CircleBorder(),
-              elevation: 4,
-              clipBehavior: Clip.antiAlias,
-              child: Builder(
-                builder: (innerContext) => IconButton(
-                  icon: Icon(Icons.menu,
-                      color: isDark ? Colors.white : Colors.black87),
-                  padding: const EdgeInsets.all(12),
-                  onPressed: () => Scaffold.of(innerContext).openDrawer(),
-                ),
-              ),
-            ),
-          ),
-
-          // Clear route button
-          if (hasRoute)
-            Positioned(
-              top: 60, right: 16,
-              child: Material(
-                color: Colors.redAccent,
-                borderRadius: BorderRadius.circular(24),
-                elevation: 4,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: _clearRoute,
-                  child: const Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.close, color: Colors.white, size: 18),
-                      SizedBox(width: 6),
-                      Text('Clear Route',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                    ]),
+            top: 60,
+            left: 16,
+            right: 16,
+            child: Column(
+              children: [
+                Material(
+                  color: isDark ? primaryBgColor : Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  elevation: 6,
+                  shadowColor: Colors.black26,
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: _onWhereToTapped,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Row(
+                        children: [
+                          Builder(
+                            builder: (innerContext) => IconButton(
+                              icon: Icon(Icons.menu,
+                                  color: isDark ? Colors.white : Colors.black87),
+                              onPressed: () => Scaffold.of(innerContext).openDrawer(),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Search here',
+                              style: TextStyle(
+                                fontSize: 17,
+                                color: isDark ? Colors.white70 : Colors.black54,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (_isRouting)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 12),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.blueAccent),
+                              ),
+                            ),
+                          if (!isDark)
+                             Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Colors.blue.shade50,
+                                child: Icon(Icons.search, color: Colors.blue.shade700, size: 20),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                if (hasRoute)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Material(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(24),
+                        elevation: 4,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(24),
+                          onTap: _clearRoute,
+                          child: const Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Icon(Icons.close, color: Colors.white, size: 18),
+                              SizedBox(width: 6),
+                              Text('Clear Route',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold)),
+                            ]),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
+          ),
 
           // ETA / Distance info card
           if (_routeInfo.hasRoute)
@@ -537,41 +584,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
                         color: isDark
                             ? Colors.white
                             : AppConstants.darkBackground),
-                  ),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: _onWhereToTapped,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(children: [
-                        Icon(Icons.search,
-                            color: isDark ? Colors.white54 : Colors.black54),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text('Where to?',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  color: isDark
-                                      ? Colors.white54
-                                      : Colors.black54,
-                                  fontWeight: FontWeight.w500)),
-                        ),
-                        if (_isRouting)
-                          const SizedBox(
-                            width: 18, height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.blueAccent),
-                          ),
-                      ]),
-                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(children: [
