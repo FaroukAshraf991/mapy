@@ -18,9 +18,11 @@ class MainMapScreen extends StatefulWidget {
   State<MainMapScreen> createState() => _MainMapScreenState();
 }
 
+enum MapStyle { street, satellite, terrain }
+
 class _MainMapScreenState extends State<MainMapScreen> {
   final MapController _mapController = MapController();
-  bool _isSatellite = false;
+  MapStyle _currentStyle = MapStyle.street;
 
   LatLng? _currentLocation;
   LatLng? _homeLocation;
@@ -36,6 +38,8 @@ class _MainMapScreenState extends State<MainMapScreen> {
   final String _osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   final String _satelliteUrl =
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  final String _topoUrl =
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
 
   @override
   void initState() {
@@ -57,7 +61,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     });
   }
 
-  void _toggleSatellite() => setState(() => _isSatellite = !_isSatellite);
+  void _setMapStyle(MapStyle style) => setState(() => _currentStyle = style);
 
   // ── Routing ───────────────────────────────────────────────────────────────
 
@@ -329,7 +333,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                 initialCenter: LatLng(51.5, -0.09), initialZoom: 13.0),
             children: [
               ColorFiltered(
-                colorFilter: isDark && !_isSatellite
+                colorFilter: isDark && _currentStyle == MapStyle.street
                     ? const ColorFilter.matrix([
                         -1, 0, 0, 0, 255,
                         0, -1, 0, 0, 255,
@@ -339,7 +343,9 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     : const ColorFilter.mode(
                         Colors.transparent, BlendMode.multiply),
                 child: TileLayer(
-                  urlTemplate: _isSatellite ? _satelliteUrl : _osmUrl,
+                  urlTemplate: _currentStyle == MapStyle.satellite
+                      ? _satelliteUrl
+                      : (_currentStyle == MapStyle.terrain ? _topoUrl : _osmUrl),
                   userAgentPackageName: 'com.farouk991.mapy',
                 ),
               ),
@@ -533,6 +539,39 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                // Layers Button
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Material(
+                    color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(24),
+                    elevation: 4,
+                    shadowColor: Colors.black12,
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: _showLayersMenu,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.layers_rounded, color: isDark ? Colors.white70 : Colors.black54, size: 20),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Layers',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white70 : Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 if (hasRoute)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -612,20 +651,12 @@ class _MainMapScreenState extends State<MainMapScreen> {
 
 
 
-          // Floating Map Actions (Above Bottom Bar)
           Positioned(
             right: 16,
             bottom: 115, // Just above the bottom container
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _mapActionButton(
-                  icon: _isSatellite ? Icons.map : Icons.satellite_alt,
-                  onPressed: _toggleSatellite,
-                  color: Colors.blueAccent,
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 8),
                 _mapActionButton(
                   icon: Icons.my_location,
                   onPressed: _relocateMe,
@@ -870,5 +901,73 @@ class _MainMapScreenState extends State<MainMapScreen> {
       });
       await ProfileService.saveCustomPins(_customPins);
     }
+  }
+
+  void _showLayersMenu() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Map Style', 
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _layerOption(MapStyle.street, 'Default', Icons.map_rounded),
+                _layerOption(MapStyle.satellite, 'Satellite', Icons.satellite_alt_rounded),
+                _layerOption(MapStyle.terrain, 'Terrain', Icons.terrain_rounded),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _layerOption(MapStyle style, String label, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSelected = _currentStyle == style;
+    
+    return GestureDetector(
+      onTap: () {
+        _setMapStyle(style);
+        Navigator.pop(context);
+      },
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isSelected 
+                ? Colors.blueAccent.withValues(alpha: 0.1) 
+                : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? Colors.blueAccent : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: Icon(icon, color: isSelected ? Colors.blueAccent : (isDark ? Colors.white70 : Colors.black54), size: 32),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: TextStyle(
+            fontSize: 13, 
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? Colors.blueAccent : (isDark ? Colors.white70 : Colors.black54),
+          )),
+        ],
+      ),
+    );
   }
 }
