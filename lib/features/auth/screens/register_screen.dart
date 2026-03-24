@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mapy/core/constants/app_constants.dart';
-import 'package:mapy/database/loginpage_database/auth_service.dart';
+import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/widgets/auth_text_field.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -105,7 +105,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppConstants.darkBackground;
     final bgColor = isDark ? AppConstants.darkBackground : AppConstants.lightBackground;
 
     return Scaffold(
@@ -139,7 +138,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text('Join Mapy', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5), textAlign: TextAlign.center),
+                          Text('Join Mapy', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.cyanAccent, letterSpacing: 2.0), textAlign: TextAlign.center),
                           const SizedBox(height: 8),
                           Text('Create your profile', style: TextStyle(fontSize: 16, color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54), textAlign: TextAlign.center),
                           const SizedBox(height: 32),
@@ -187,14 +186,14 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                           ElevatedButton(
                             onPressed: _register,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark ? Colors.white : AppConstants.darkBackground,
-                              foregroundColor: isDark ? AppConstants.darkBackground : Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              elevation: 8,
-                              shadowColor: Colors.black45,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              elevation: 12,
+                              shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             ),
-                            child: const Text('Create Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            child: const Text('CREATE ACCOUNT', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           ),
                         ],
                       ),

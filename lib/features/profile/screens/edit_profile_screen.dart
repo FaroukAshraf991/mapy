@@ -45,9 +45,13 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   void initState() {
     super.initState();
     _animController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
 
     final user = Supabase.instance.client.auth.currentUser;
@@ -57,13 +61,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
     _loadAvatar();
 
-    _authSubscription =
-        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      data,
+    ) {
       if (data.event == AuthChangeEvent.passwordRecovery) {
         if (!mounted) return;
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const UpdatePasswordScreen()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const UpdatePasswordScreen()));
       }
     });
   }
@@ -101,8 +106,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   Future<void> _saveEmail() async {
     final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-      _showError('Please enter a valid email address.');
+    if (email.isEmpty) {
+      _showError('Email cannot be empty.');
       return;
     }
     setState(() => _savingEmail = true);
@@ -112,7 +117,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     if (error != null) {
       _showError(error);
     } else {
-      _showSuccess('Verification email sent to $email.');
+      _showSuccess('Email update initiated. Please check your new email.');
     }
   }
 
@@ -171,7 +176,10 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final XFile? picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (picked == null || !mounted) return;
 
     setState(() => _uploadingAvatar = true);
@@ -214,11 +222,15 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.redAccent));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+    );
   }
 
   void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
   }
 
   @override
@@ -237,7 +249,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         children: [
           // ── Drag Handle ───────────────────────────────────────────────────
           Container(
-            width: 40, height: 4,
+            width: 40,
+            height: 4,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? Colors.white12 : Colors.black12,
@@ -256,9 +269,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   onPressed: () => Navigator.pop(context),
                   color: textColor.withValues(alpha: 0.5),
                 ),
-                Text('Edit Profile',
-                    style: TextStyle(
-                        color: textColor, fontWeight: FontWeight.w800, fontSize: 20)),
+                Text(
+                  'Edit Profile',
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                  ),
+                ),
                 const SizedBox(width: 48), // Spacer to balance the close button
               ],
             ),
@@ -268,7 +286,10 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   children: [
                     // ── Avatar Section ────────────────────────────────────────
@@ -276,7 +297,11 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                     const SizedBox(height: 12),
                     Text(
                       _nameController.text,
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: textColor),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: textColor,
+                      ),
                     ),
                     const SizedBox(height: 32),
 
@@ -288,7 +313,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                     _buildEmailSection(isDark, textColor),
                     const SizedBox(height: 20),
                     _buildPasswordSection(isDark, textColor),
-                    
+
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -314,17 +339,31 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                   width: 4,
                 ),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: CircleAvatar(
                 radius: 54,
-                backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
-                backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                backgroundColor: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.shade100,
+                backgroundImage: _avatarUrl != null
+                    ? NetworkImage(_avatarUrl!)
+                    : null,
                 child: _avatarUrl == null
                     ? Text(
-                        _nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : 'U',
-                        style: TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87),
+                        _nameController.text.isNotEmpty
+                            ? _nameController.text[0].toUpperCase()
+                            : 'U',
+                        style: TextStyle(
+                          fontSize: 38,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
                       )
                     : null,
               ),
@@ -332,12 +371,21 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             if (_uploadingAvatar)
               Positioned.fill(
                 child: Container(
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
-                  child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                    ),
+                  ),
                 ),
               ),
             Positioned(
-              bottom: 0, right: 0,
+              bottom: 0,
+              right: 0,
               child: Material(
                 color: Colors.transparent,
                 child: GestureDetector(
@@ -349,7 +397,11 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                       shape: BoxShape.circle,
                       border: Border.all(color: bgColor, width: 3),
                     ),
-                    child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -399,8 +451,13 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 8),
-        Text('A verification email will be sent to your new address.',
-            style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.5))),
+        Text(
+          'A verification email will be sent to your new address.',
+          style: TextStyle(
+            fontSize: 12,
+            color: textColor.withValues(alpha: 0.5),
+          ),
+        ),
         const SizedBox(height: 16),
         ProfileActionButton(
           label: 'Update Email',
@@ -454,8 +511,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: _handleForgotPassword,
-            child: Text('Forgot Password?',
-                style: TextStyle(color: textColor.withValues(alpha: 0.5), fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(
+              'Forgot Password?',
+              style: TextStyle(
+                color: textColor.withValues(alpha: 0.5),
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
           ),
         ),
       ],
@@ -473,15 +536,31 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         if (hasDOB) ...[
           _buildDOBDisplay(isDark),
           const SizedBox(height: 8),
-          Text('Date of birth cannot be changed after registration.',
-              style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.4), fontStyle: FontStyle.italic)),
+          Text(
+            'Date of birth cannot be changed after registration.',
+            style: TextStyle(
+              fontSize: 11,
+              color: textColor.withValues(alpha: 0.4),
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         ] else ...[
-          Text('Your birth date is missing. Please set it once to complete your profile.',
-              style: TextStyle(fontSize: 13, color: textColor.withValues(alpha: 0.6))),
+          Text(
+            'Your birth date is missing. Please set it once to complete your profile.',
+            style: TextStyle(
+              fontSize: 13,
+              color: textColor.withValues(alpha: 0.6),
+            ),
+          ),
           const SizedBox(height: 16),
           _buildDOBPicker(isDark),
           const SizedBox(height: 16),
-          ProfileActionButton(label: 'Save Date of Birth', isLoading: _savingDOB, onPressed: _saveDOB, isDark: isDark),
+          ProfileActionButton(
+            label: 'Save Date of Birth',
+            isLoading: _savingDOB,
+            onPressed: _saveDOB,
+            isDark: isDark,
+          ),
         ],
       ],
     );
@@ -491,26 +570,50 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.05)
+            : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.calendar_today_rounded, color: isDark ? Colors.white24 : Colors.black38, size: 20),
+          Icon(
+            Icons.calendar_today_rounded,
+            color: isDark ? Colors.white24 : Colors.black38,
+            size: 20,
+          ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Date of Birth',
-                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black45, fontWeight: FontWeight.w500)),
+              Text(
+                'Date of Birth',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white38 : Colors.black45,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text(_dobString!,
-                  style: TextStyle(fontSize: 16, color: isDark ? Colors.white70 : Colors.black54, fontWeight: FontWeight.w600)),
+              Text(
+                _dobString!,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
           const Spacer(),
-          Icon(Icons.lock_outline_rounded, color: isDark ? Colors.white10 : Colors.black12, size: 16),
+          Icon(
+            Icons.lock_outline_rounded,
+            color: isDark ? Colors.white10 : Colors.black12,
+            size: 16,
+          ),
         ],
       ),
     );
@@ -522,19 +625,31 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade50,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isDark ? Colors.white24 : Colors.grey.shade300),
+          border: Border.all(
+            color: isDark ? Colors.white24 : Colors.grey.shade300,
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 20),
+            Icon(
+              Icons.calendar_today_rounded,
+              color: isDark ? Colors.white70 : Colors.black87,
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Text(
-              _tempDOB != null ? DateFormat('MMMM d, yyyy').format(_tempDOB!) : 'Pick Birthday',
+              _tempDOB != null
+                  ? DateFormat('MMMM d, yyyy').format(_tempDOB!)
+                  : 'Pick Birthday',
               style: TextStyle(
                 fontSize: 16,
-                color: _tempDOB != null ? (isDark ? Colors.white : Colors.black87) : (isDark ? Colors.white24 : Colors.black38),
+                color: _tempDOB != null
+                    ? (isDark ? Colors.white : Colors.black87)
+                    : (isDark ? Colors.white24 : Colors.black38),
               ),
             ),
           ],

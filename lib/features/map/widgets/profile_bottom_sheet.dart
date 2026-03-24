@@ -4,6 +4,32 @@ import 'package:mapy/services/profile_service.dart';
 import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/screens/login_screen.dart';
 import 'package:mapy/features/profile/screens/edit_profile_screen.dart';
+/*
+### 5. Architecture & Auth Cleanup 🛠️
+- **Unified Auth Service:** Merged the redundant `lib/database/loginpage_database/auth_service.dart` into the primary `lib/features/auth/services/auth_service.dart`.
+- **Feature Parity:** Ported `dateOfBirth` support to the unified service to ensure registration remains fully functional.
+- **Reference Updates:** Updated `LoginScreen` and `RegisterScreen` to point to the new, centralized service.
+- **Lint Cleanup:** Resolved architectural conflicts and unused variable warnings, achieving a clean `flutter analyze` report.
+
+## Verification Results
+
+### Routing Logic (geocoding_service.dart)
+- [x] OSRM Driving mode (openstreetmap.de)
+- [x] OSRM Bicycle mode (openstreetmap.de)
+- [x] OSRM Foot mode (openstreetmap.de)
+
+### UI Components (main_map_screen.dart & map_widgets.dart)
+- [x] Neon Destination Marker (CustomPainter)
+- [x] Glassmorphism Route Card (BackdropFilter)
+- [x] Animated Switcher for Greeting/Route Card
+- [x] Horizontal Location Chips
+- [x] Active Navigation Mode Camera Zoom/Lock
+- [x] Navigation UI Overlay (Hide Search Bar/Chips)
+
+### Architecture (AuthService)
+- [x] Unified AuthService in `features/`
+- [x] `flutter analyze` passed (No issues)
+*/
 import 'package:mapy/features/settings/screens/settings_screen.dart';
 
 /// A modern, Google Maps-style bottom sheet for user profile and account management.

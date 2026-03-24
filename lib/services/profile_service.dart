@@ -54,7 +54,7 @@ class ProfileService {
         customPins: List<Map<String, dynamic>>.from(data['custom_pins'] ?? []),
       );
     } catch (e) {
-      debugPrint('Error loading profile: $e');
+      debugPrint('Error loading profile (check if custom_pins column exists): $e');
       // On error, still return the metadata avatar if available.
       return (home: null, work: null, avatarUrl: user?.userMetadata?['avatar_url'] as String?, customPins: <Map<String, dynamic>>[]);
     }
@@ -63,28 +63,28 @@ class ProfileService {
   // ── LOCATION WRITE OPERATIONS ──────────────────────────────────────────────
 
   /// Persists the user's Home location to the database.
-  static Future<void> saveHomeLocation(LatLng loc) async {
-    await _upsert({'home_lat': loc.latitude, 'home_lon': loc.longitude});
+  static Future<String?> saveHomeLocation(LatLng loc) async {
+    return await _upsert({'home_lat': loc.latitude, 'home_lon': loc.longitude});
   }
 
   /// Persists the user's Work location to the database.
-  static Future<void> saveWorkLocation(LatLng loc) async {
-    await _upsert({'work_lat': loc.latitude, 'work_lon': loc.longitude});
+  static Future<String?> saveWorkLocation(LatLng loc) async {
+    return await _upsert({'work_lat': loc.latitude, 'work_lon': loc.longitude});
   }
 
   /// Removes the user's Home location from the database.
-  static Future<void> clearHomeLocation() async {
-    await _upsert({'home_lat': null, 'home_lon': null});
+  static Future<String?> clearHomeLocation() async {
+    return await _upsert({'home_lat': null, 'home_lon': null});
   }
 
   /// Removes the user's Work location from the database.
-  static Future<void> clearWorkLocation() async {
-    await _upsert({'work_lat': null, 'work_lon': null});
+  static Future<String?> clearWorkLocation() async {
+    return await _upsert({'work_lat': null, 'work_lon': null});
   }
 
   /// Saves the entire list of custom favorite pins (shortcuts) to the database.
-  static Future<void> saveCustomPins(List<Map<String, dynamic>> pins) async {
-    await _upsert({'custom_pins': pins});
+  static Future<String?> saveCustomPins(List<Map<String, dynamic>> pins) async {
+    return await _upsert({'custom_pins': pins});
   }
 
   // ── AVATAR OPERATIONS ──────────────────────────────────────────────────────
@@ -139,17 +139,25 @@ class ProfileService {
   // ── PRIVATE HELPERS ────────────────────────────────────────────────────────
 
   /// Performs an upsert (insert or update) on the user's profile record.
-  static Future<void> _upsert(Map<String, dynamic> fields) async {
+  /// Returns an error message if the operation fails, or null on success.
+  static Future<String?> _upsert(Map<String, dynamic> fields) async {
     final uid = _uid;
-    if (uid == null) return;
+    if (uid == null) return 'No user signed in.';
     try {
       await _client.from('profiles').upsert({
         'id': uid,
         'updated_at': DateTime.now().toIso8601String(),
         ...fields,
       });
+      return null;
+    } on PostgrestException catch (e) {
+      final msg = 'Supabase Error: ${e.message} (Code: ${e.code})';
+      debugPrint(msg);
+      return msg;
     } catch (e) {
-      debugPrint('Error upserting profile: $e');
+      final msg = 'Unexpected Error: $e';
+      debugPrint(msg);
+      return msg;
     }
   }
 

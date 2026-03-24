@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mapy/core/constants/app_constants.dart';
-import 'package:mapy/database/loginpage_database/auth_service.dart';
+import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/widgets/auth_text_field.dart';
 import 'package:mapy/features/auth/screens/register_screen.dart';
 import 'package:mapy/features/auth/screens/update_password_screen.dart';
@@ -99,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : AppConstants.darkBackground;
     final bgColor = isDark ? AppConstants.darkBackground : AppConstants.lightBackground;
 
     return Scaffold(
@@ -130,11 +129,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Icon(Icons.location_on_rounded, size: 64, color: isDark ? Colors.white : AppConstants.darkBackground),
+                          Icon(Icons.location_on_rounded, size: 72, color: Colors.cyanAccent),
                           const SizedBox(height: 16),
                           Text(
                             'Mapy',
-                            style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 2.0),
+                            style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: Colors.cyanAccent, letterSpacing: 3.0),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
@@ -159,14 +158,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                           ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark ? Colors.white : AppConstants.darkBackground,
-                              foregroundColor: isDark ? AppConstants.darkBackground : Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              elevation: 8,
-                              shadowColor: Colors.black45,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              elevation: 12,
+                              shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             ),
-                            child: const Text('Sign In', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                            child: const Text('SIGN IN', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
                           ),
                           const SizedBox(height: 24),
                           Row(
@@ -177,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 onPressed: () {
                                   Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterScreen()));
                                 },
-                                child: Text('Create Account', style: TextStyle(color: isDark ? Colors.white : AppConstants.darkBackground, fontWeight: FontWeight.bold)),
+                                child: Text('Create Account', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.w900, fontSize: 16)),
                               ),
                             ],
                           ),

@@ -1,41 +1,4 @@
-import 'package:latlong2/latlong.dart';
-
-/// Distance + ETA data returned alongside a route polyline from OSRM.
-class RouteInfo {
-  final List<LatLng> points;
-  final double distanceMeters;
-  final double durationSeconds;
-
-  const RouteInfo({
-    required this.points,
-    required this.distanceMeters,
-    required this.durationSeconds,
-  });
-
-  static const RouteInfo empty =
-      RouteInfo(points: [], distanceMeters: 0, durationSeconds: 0);
-
-  bool get hasRoute => points.isNotEmpty;
-
-  /// e.g. "12.3 km" or "850 m"
-  String get distanceText {
-    if (distanceMeters < 1000) {
-      return '${distanceMeters.round()} m';
-    }
-    return '${(distanceMeters / 1000).toStringAsFixed(1)} km';
-  }
-
-  /// e.g. "~5 min" or "~1 h 12 min"
-  String get etaText {
-    final minutes = (durationSeconds / 60).round();
-    if (minutes < 60) return '~$minutes min';
-    final h = minutes ~/ 60;
-    final m = minutes % 60;
-    return m == 0 ? '~$h h' : '~$h h $m min';
-  }
-}
-
-/// Represents a single geocoding result returned from Nominatim.
+// PlaceResult model
 class PlaceResult {
   final String displayName;
   final double lat;

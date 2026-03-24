@@ -65,13 +65,14 @@ A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM
 - A **progress bar** animates at the top while the route loads
 
 ### 6. 🏠💼 Smart Home & Work Locations
-- Set a **Home** and **Work** pin anywhere on the map
+- Set a **Home** and **Work** pin directly on the map via a visual picker
 - Once set, tapping the button shows a contextual sheet:
   - **"Go to Home/Work"** — draws a road route to the pin
-  - **"Change location"** — re-opens the map picker
+  - **"Change location"** — re-opens the map picker with a confirmation flow
   - **"Clear location"** — removes the pin from map and cloud
 - A **green dot badge** on each button shows when a location is saved
 - Both locations **sync to Supabase** and restore automatically on every login
+- **Refined UX:** Users can visually confirm and adjust the pin before saving
 
 ### 7. ☁️ Supabase Profile Sync
 - Each user has a `profiles` row in Supabase Postgres
@@ -88,36 +89,51 @@ A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM
 - Upload spinner + success snack bar give clear feedback
 - Avatar loads from the cloud on every session
 
-### 10. 🎨 Unified Visual Theme
-- Custom deep-blue palette (`#0F2027` dark / `#F8F9FA` light) applied across every screen
-- Native **splash screen** matches perfectly — no jarring flash on launch
-- Full **dark mode and light mode** with a toggle in the drawer
+### 10. 🚗 Pro-Active 3D Navigation Engine
+- **3D Perspective (Pitch/Tilt):** Hardware-accelerated 3D tilt (up to 60 degrees) for a professional "road-ahead" view.
+- **Glide Physics:** Butter-smooth 60Hz vector interpolation for car movement between GPS updates.
+* **Smart Auto-Bearing:** Precise, hardware-synced map rotation that tracks your heading in real-time.
+* **MapLibre GL Upgrade:** Rebuilt on MapLibre 0.22.0 for superior performance and 3D vector tile rendering.
+* **Minimalist Map:** Stripped the standard compass UI for a cleaner, modern navigation aesthetic.
 
-### 11. 🗂️ Navigation Drawer
-- Profile header with avatar, username, and "Change photo" shortcut
-- Dark Mode toggle (persisted across sessions)
-- Recent Places shortcut + Settings placeholder
+### 11. 🕐 Smart Recent Search History
+- **Dynamic Shortcut Chips:** Your last **3 search results** are displayed as quick-access chips on the main map.
+- **One-Tap Routing:** Tapping a chip immediately draws a road route to that destination.
+- **Auto-Refresh:** History updates instantly when you select a new place from the search screen.
+- **Persistent Storage:** Synced between local `shared_preferences` and session state for reliability.
 
-### 12. 🏗️ Clean Architecture
-- Feature-based: `auth`, `map`, `profile` — each with `screens/`, `services/`, `models/`, `widgets/`
-- Stateless static services — easy to read and test
-- `flutter analyze` → **zero issues** throughout development
+### 12. 👤 Unified Profile & Settings
+- **Persistent Settings Drawer:** A dedicated hub for dark mode toggles, account info, and profile management.
+- **Real-Time Profile Sync:** Full support for updating Name, Email, DOB, and Password with instant Supabase persistence.
+- **Custom Avatar Management:** Securely upload and retrieve profile pictures via Supabase Storage buckets.
+
+### 13. ✨ Premium Visual Overhaul
+- **Neon Destination Marker 📍:** A custom-painted marker with a transparent center, multi-layered electric blue glow, and a subtle pulse ring.
+- **Advanced Glassmorphism:** The Route Card and UI bars use `BackdropFilter` real-time blur (10px sigma) with white-tinted borders for an "Apple-style" finish.
+- **Active Navigation Mode:** Tapping "START" transitions the app into a focused mode that hides non-essential UI, zooms in on your location, and provides a "NAVIGATING..." indicator.
+- **Fluid Motion System:** All UI elements glide into place using `AnimatedSwitcher` with slide and fade transitions.
+
+### 14. 🛣️ Dynamic Travel Modes
+- Toggle between **Car 🚗, Motorcycle 🏍️, Bicycle 🚲, and Walking 🚶** modes.
+- **Real-Time Recalculation:** Tapping a mode immediately updates the ETA and distance based on OSRM profiles.
+- **Contextual Actions:** "START" and "EXIT" buttons are integrated directly into the travel mode selection row for a compact, intuitive control set.
 
 ---
 
 ## Privacy & Security
-- Supabase RLS — users cannot access each other's data
-- Passwords managed entirely by Supabase Auth — never stored in the app
-- Avatar uploads restricted to authenticated users via Storage policies
+- **Supabase RLS:** Row-Level Security ensures users can only access their own profile data and coordinates.
+- **Secure Auth:** Passwords managed entirely by Supabase Auth — never stored locally or in plain text.
+- **Cloud Synchronization:** Your Home/Work locations and custom pins follow you across devices.
 
 ---
 
 ## What Makes it Stand Out
-1. **No paid APIs** — OSM, OSRM, and Nominatim are all free
-2. **Real road routing** — actual driving paths, not straight lines
-3. **Seamless deep-link password reset** — works natively inside the app
-4. **Cloud persistence** — Home/Work locations follow the user across devices
-5. **Production-quality UX** — ETA cards, animated progress bars, bottom sheets, badge indicators
+1. **No Paid APIs:** OSM, OSRM, and Nominatim are used to provide high-end features at zero cost.
+2. **Professional 3D Engine:** High-performance vector map with tilt and rotation support.
+3. **Immersive UI:** Neon aesthetics, glassmorphism, and fluid motion design.
+4. **Seamless Password Resets:** Deep-link handling allows users to reset passwords natively inside the app.
+
+---
 
 ## Setup
 
@@ -131,30 +147,35 @@ cd mapy
 ```bash
 cp lib/core/config/secrets.dart.example lib/core/config/secrets.dart
 ```
-Then open `lib/core/config/secrets.dart` and fill in your Supabase project URL and anon key (from **Supabase → Settings → API**).
+Then open `lib/core/config/secrets.dart` and fill in your Supabase project URL and anon key.
 
 ### 3. Create the Supabase `profiles` table
-Run this SQL in your **Supabase SQL Editor**:
+Run this SQL in your **Supabase SQL Editor** to create the required table and RLS policies:
 ```sql
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+CREATE TABLE public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name text,
   home_lat double precision,
   home_lon double precision,
   work_lat double precision,
   work_lon double precision,
+  custom_pins jsonb DEFAULT '[]'::jsonb,
   avatar_url text,
-  updated_at timestamptz default now()
+  updated_at timestamptz DEFAULT now()
 );
-alter table public.profiles enable row level security;
-create policy "select_own" on public.profiles for select using (auth.uid() = id);
-create policy "insert_own" on public.profiles for insert with check (auth.uid() = id);
-create policy "update_own" on public.profiles for update using (auth.uid() = id);
+
+-- Enable RLS
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Create Policies
+CREATE POLICY "Allow select for owners" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Allow insert for owners" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Allow update for owners" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 ```
 
 ### 4. Create the Supabase `avatars` storage bucket
-- Go to **Storage → New bucket** → name: `avatars` → toggle **Public**
-- Add policies: authenticated users can INSERT/UPDATE; public can SELECT.
+- Create a bucket named `avatars` and set it to **Public**.
+- Add policies allowing authenticated users to INSERT and UPDATE their own files.
 
 ### 5. Run the app
 ```bash
@@ -163,7 +184,6 @@ flutter run
 ```
 
 ## Architecture
-
 Feature-based clean architecture:
 ```
 lib/
