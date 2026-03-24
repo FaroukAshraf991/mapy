@@ -5,23 +5,31 @@ import 'package:latlong2/latlong.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/map/screens/next_where_to_screen.dart';
 import 'package:mapy/features/map/screens/pick_location_screen.dart';
-import 'package:mapy/features/map/widgets/main_drawer.dart';
+import 'package:mapy/features/map/widgets/profile_bottom_sheet.dart';
 import 'package:mapy/models/place_result.dart';
 import 'package:mapy/services/geocoding_service.dart';
 import 'package:mapy/services/profile_service.dart';
 import 'package:mapy/features/map/widgets/map_widgets.dart';
 
+/// The primary map screen of the application.
+/// Manages the map state, user location, routing logic, and integration
+/// with modular map widgets and the profile drawer.
 class MainMapScreen extends StatefulWidget {
+  /// The display name of the authenticated user.
   final String userName;
+
   const MainMapScreen({super.key, required this.userName});
 
   @override
   State<MainMapScreen> createState() => _MainMapScreenState();
 }
 
+/// Available styles for the map tiles.
 enum MapStyle { street, satellite, terrain }
 
 class _MainMapScreenState extends State<MainMapScreen> {
+  // ── CORE STATE ─────────────────────────────────────────────────────────────
+
   final MapController _mapController = MapController();
   MapStyle _currentStyle = MapStyle.street;
 
@@ -29,12 +37,17 @@ class _MainMapScreenState extends State<MainMapScreen> {
   LatLng? _homeLocation;
   LatLng? _workLocation;
   String? _avatarUrl;
+
+  /// List of user-defined favorite locations (shortcuts).
   List<Map<String, dynamic>> _customPins = [];
 
-  // ── Destination & Routing ─────────────────────────────────────────────────
+  // ── DESTINATION & ROUTING ─────────────────────────────────────────────────
+
   LatLng? _destinationLocation;
   RouteInfo _routeInfo = RouteInfo.empty;
   bool _isRouting = false;
+
+  // ── TILE URLs ──────────────────────────────────────────────────────────────
 
   final String _osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   final String _satelliteUrl =
@@ -45,12 +58,14 @@ class _MainMapScreenState extends State<MainMapScreen> {
   @override
   void initState() {
     super.initState();
+    // Load initial data after the first frame to ensure the map is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _relocateMe();
       _loadSavedProfile();
     });
   }
 
+  /// Fetches the user's saved locations and avatar from Supabase.
   Future<void> _loadSavedProfile() async {
     final profile = await ProfileService.loadProfile();
     if (!mounted) return;
@@ -62,10 +77,12 @@ class _MainMapScreenState extends State<MainMapScreen> {
     });
   }
 
+  /// Toggles the visual style of the map.
   void _setMapStyle(MapStyle style) => setState(() => _currentStyle = style);
 
-  // ── Routing ───────────────────────────────────────────────────────────────
+  // ── ROUTING LOGIC ─────────────────────────────────────────────────────────
 
+  /// Opens the search screen and handles the navigation to the selected result.
   Future<void> _onWhereToTapped() async {
     final LatLng? picked = await Navigator.of(context).push<LatLng>(
       MaterialPageRoute(builder: (_) => const NextWhereToScreen()),
@@ -74,6 +91,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     await _navigateTo(picked);
   }
 
+  /// Resets the current route and destination.
   void _clearRoute() {
     setState(() {
       _destinationLocation = null;
@@ -81,6 +99,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     });
   }
 
+  /// Calculates and displays a route from the current location to [loc].
   Future<void> _navigateTo(LatLng loc) async {
     setState(() {
       _destinationLocation = loc;
@@ -95,7 +114,9 @@ class _MainMapScreenState extends State<MainMapScreen> {
         _routeInfo = info;
         _isRouting = false;
       });
+
       if (info.hasRoute) {
+        // Zoom the map to fit both the start and end points.
         final bounds = LatLngBounds.fromPoints([_currentLocation!, loc]);
         _mapController.fitCamera(
           CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(80)),
@@ -109,8 +130,9 @@ class _MainMapScreenState extends State<MainMapScreen> {
     }
   }
 
-  // ── Location ──────────────────────────────────────────────────────────────
+  // ── GEOLOCATION ────────────────────────────────────────────────────────────
 
+  /// Requests location permissions and centers the map on the user.
   Future<void> _relocateMe() async {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -148,8 +170,9 @@ class _MainMapScreenState extends State<MainMapScreen> {
     }
   }
 
-  // ── Smart Home / Work ─────────────────────────────────────────────────────
+  // ── SHORTCUT MANAGEMENT (HOME / WORK) ─────────────────────────────────────
 
+  /// Interacts with the Home/Work buttons based on their current state.
   void _handleLocationButton(String type) {
     final currentLoc = type == 'home' ? _homeLocation : _workLocation;
     if (currentLoc == null) {
@@ -159,6 +182,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     }
   }
 
+  /// Opens a map picker to define a Home or Work location.
   Future<void> _openPicker(String type) async {
     final isHome = type == 'home';
     final LatLng? picked = await Navigator.of(context).push<LatLng>(
@@ -188,6 +212,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     ));
   }
 
+  /// Displays an action sheet for an existing Home/Work location.
   void _showLocationSheet(String type, LatLng loc) {
     final isHome = type == 'home';
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -291,6 +316,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     );
   }
 
+  /// Builds a standard tile for the location action sheet.
   Widget _sheetTile({
     required IconData icon,
     required Color iconColor,
@@ -316,7 +342,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  // ── BUILD ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -324,12 +350,9 @@ class _MainMapScreenState extends State<MainMapScreen> {
     final bool hasRoute = _destinationLocation != null;
 
     return Scaffold(
-      drawer: MainDrawer(
-        userName: widget.userName,
-        onProfileUpdate: _loadSavedProfile,
-      ),body: Stack(
+      body: Stack(
         children: [
-          // Map
+          // Background Map Layer
           FlutterMap(
             mapController: _mapController,
             options: const MapOptions(
@@ -343,8 +366,8 @@ class _MainMapScreenState extends State<MainMapScreen> {
                         0, 0, -1, 0, 255,
                         0, 0, 0, 1, 0,
                       ])
-                    : const ColorFilter.mode(
-                        Colors.transparent, BlendMode.multiply),
+                    : ColorFilter.mode(
+                        Colors.transparent.withValues(alpha: 0), BlendMode.multiply),
                 child: TileLayer(
                   urlTemplate: _currentStyle == MapStyle.satellite
                       ? _satelliteUrl
@@ -379,7 +402,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                 if (_workLocation != null)
                   Marker(
                       point: _workLocation!,
-      width: 44, height: 44,
+                      width: 44, height: 44,
                       child: const Icon(Icons.work,
                           color: Colors.orange, size: 44)),
                 if (_destinationLocation != null)
@@ -393,7 +416,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
             ],
           ),
 
-          // Routing progress bar
+          // Routing/Loading Progress Bar
           if (_isRouting)
             Positioned(
               top: 0, left: 0, right: 0,
@@ -403,7 +426,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
               ),
             ),
 
-          // Floating Search Header (Top)
+          // MAIN SEARCH UI (TOP)
           Positioned(
             top: 60,
             left: 16,
@@ -417,11 +440,12 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     isRouting: _isRouting,
                     avatarUrl: _avatarUrl,
                     onSearchTap: _onWhereToTapped,
-                    onAvatarTap: () => Scaffold.of(context).openDrawer(),
+                    onAvatarTap: () => _showProfileBottomSheet(),
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Horizontal Shortcuts (Home, Work, etc.)
+
+                // Horizontal Shortcut List
                 SizedBox(
                   height: 44,
                   child: SingleChildScrollView(
@@ -485,7 +509,8 @@ class _MainMapScreenState extends State<MainMapScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Layers Button (Right Aligned, Icon Only)
+
+                // Layers Overlay Toggle
                 Align(
                   alignment: Alignment.centerRight,
                   child: MapActionButton(
@@ -495,6 +520,8 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     isDark: isDark,
                   ),
                 ),
+
+                // Clear Route Action
                 if (hasRoute)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -527,7 +554,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
             ),
           ),
 
-          // ETA / Distance info card
+          // ROUTE FEEDBACK (BOTTOM-CENTER)
           if (_routeInfo.hasRoute)
             Positioned(
               left: 16, right: 16, bottom: 220,
@@ -572,8 +599,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
               ),
             ),
 
-
-
+          // QUICK ACTIONS (FLOATING RIGHT)
           Positioned(
             right: 16,
             bottom: 115, // Just above the bottom container
@@ -590,7 +616,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
             ),
           ),
 
-          // Bottom bar
+          // PERSISTENT WELCOME BAR (BOTTOM)
           Positioned(
             left: 16, right: 16, bottom: 40,
             child: Container(
@@ -628,6 +654,9 @@ class _MainMapScreenState extends State<MainMapScreen> {
     );
   }
 
+  // ── CUSTOM SHORTCUT MANAGEMENT ───────────────────────────────────────────
+
+  /// Adds a new personalized shortcut to the list.
   Future<void> _addCustomPin() async {
     final String? label = await showDialog<String>(
       context: context,
@@ -668,6 +697,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     }
   }
 
+  /// Deletes an existing custom shortcut.
   Future<void> _deleteCustomPin(Map<String, dynamic> pin) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -693,6 +723,20 @@ class _MainMapScreenState extends State<MainMapScreen> {
     }
   }
 
+  /// Displays the profile menu in a modern, Google Maps-style bottom sheet.
+  void _showProfileBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => ProfileBottomSheet(
+        userName: widget.userName,
+        onProfileUpdate: _loadSavedProfile,
+      ),
+    );
+  }
+
+  /// Displays the map style selection menu.
   void _showLayersMenu() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(

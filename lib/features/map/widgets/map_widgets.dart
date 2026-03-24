@@ -2,12 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/map/screens/main_map_screen.dart'; // To use MapStyle enum
 
+// ── WIDGETS ──────────────────────────────────────────────────────────────────
+
 /// A reusable search bar with a profile avatar button on the right.
+/// Used at the top of the map screen to trigger location searches and access
+/// the user's profile drawer.
 class MapSearchBar extends StatelessWidget {
+  /// Whether the app is currently in dark mode.
   final bool isDark;
+  
+  /// Whether a route is currently being calculated (shows a progress indicator).
   final bool isRouting;
+  
+  /// The URL of the user's profile picture from Supabase.
   final String? avatarUrl;
+  
+  /// Callback triggered when the main search area is tapped.
   final VoidCallback onSearchTap;
+  
+  /// Callback triggered when the profile avatar icon is tapped.
   final VoidCallback onAvatarTap;
 
   const MapSearchBar({
@@ -85,15 +98,33 @@ class MapSearchBar extends StatelessWidget {
   }
 }
 
-/// A specialized chip for the horizontal shortcuts list.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// A specialized chip for the horizontal shortcuts list (Recent, Home, Work, etc.).
+/// Features individual styling based on the shortcut type and "is set" status.
 class LocationChip extends StatelessWidget {
+  /// The type identifier (e.g., 'home', 'work', 'recent', 'custom').
   final String type;
+  
+  /// The icon to display on the left.
   final IconData icon;
+  
+  /// The display label.
   final String label;
+  
+  /// Whether the location has been set in the profile.
   final bool isSet;
+  
+  /// The color to use when the location is set.
   final Color activeColor;
+  
+  /// Whether the app is in dark mode.
   final bool isDark;
+  
+  /// Primary tap callback.
   final VoidCallback onTap;
+  
+  /// Long press callback (usually for deletion).
   final VoidCallback? onLongPress;
 
   const LocationChip({
@@ -161,11 +192,21 @@ class LocationChip extends StatelessWidget {
   }
 }
 
-/// A floating action button styled for the map UI.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// A circular floating action button styled for the map UI.
+/// Used for "Relocate Me" and "Layers" toggle.
 class MapActionButton extends StatelessWidget {
+  /// The icon to display.
   final IconData icon;
+  
+  /// Tap callback.
   final VoidCallback onPressed;
+  
+  /// The color of the icon.
   final Color color;
+  
+  /// Whether the app is in dark mode.
   final bool isDark;
 
   const MapActionButton({
@@ -192,10 +233,18 @@ class MapActionButton extends StatelessWidget {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+
 /// The content for the Map Style selection bottom sheet.
+/// Allows the user to toggle between Default, Satellite, and Terrain views.
 class MapLayerSelector extends StatelessWidget {
+  /// The currently active map style.
   final MapStyle currentStyle;
+  
+  /// Whether the app is in dark mode.
   final bool isDark;
+  
+  /// Callback triggered when a new style is selected.
   final Function(MapStyle) onStyleSelected;
 
   const MapLayerSelector({
@@ -236,6 +285,7 @@ class MapLayerSelector extends StatelessWidget {
     );
   }
 
+  /// Builds an individual style selection item (Icon + Label).
   Widget _styleItem(MapStyle style, String label, IconData icon) {
     final isSelected = currentStyle == style;
 
@@ -249,8 +299,8 @@ class MapLayerSelector extends StatelessWidget {
               color: isSelected
                   ? Colors.blueAccent.withValues(alpha: 0.1)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.grey.shade100),
+                       ? Colors.white.withValues(alpha: 0.05)
+                       : Colors.grey.shade100),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected ? Colors.blueAccent : Colors.transparent,
@@ -278,9 +328,14 @@ class MapLayerSelector extends StatelessWidget {
   }
 }
 
-/// The "Add" button used at the end of the shortcut list.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// The "Add" button used at the end of the shortcut list to define a new favorite.
 class AddShortcutButton extends StatelessWidget {
+  /// Whether the app is in dark mode.
   final bool isDark;
+  
+  /// Tap callback.
   final VoidCallback onTap;
 
   const AddShortcutButton({
@@ -313,7 +368,7 @@ class AddShortcutButton extends StatelessWidget {
               Text(
                 'Add',
                 style: TextStyle(
-                  fontSize: 13, // Matches the 'Layers' text size
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: foregroundColor,
                 ),
@@ -326,11 +381,21 @@ class AddShortcutButton extends StatelessWidget {
   }
 }
 
-/// A specialized chip for displaying route information (time, distance).
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// A specialized chip for displaying route information (ETA and Distance).
+/// Used in the floating card that appears when a route is destination is set.
 class MapInfoChip extends StatelessWidget {
+  /// The icon representing the metric (e.g., straight for distance, timer for ETA).
   final IconData icon;
+  
+  /// The color of the icon for visual distinction.
   final Color color;
+  
+  /// The display text (e.g., "12 min", "5.4 km").
   final String label;
+  
+  /// Whether the app is in dark mode.
   final bool isDark;
 
   const MapInfoChip({
@@ -360,5 +425,6 @@ class MapInfoChip extends StatelessWidget {
     );
   }
 }
+
 
 

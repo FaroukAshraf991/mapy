@@ -3,15 +3,28 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Handles reading and writing the user's profile (Home/Work locations +
-/// avatar) to the `profiles` table and `avatars` Supabase Storage bucket.
+/// Service class for managing user profile data in Supabase.
+/// This includes Home/Work locations, custom favorite pins, and profile avatars.
+/// 
+/// It implements a "dual-storage" strategy for avatars to ensure high reliability.
 class ProfileService {
   static final _client = Supabase.instance.client;
 
+  /// Returns the current authenticated user's ID.
   static String? get _uid => _client.auth.currentUser?.id;
 
-  // ── Read ──────────────────────────────────────────────────────────────────
+  // ── READ OPERATIONS ────────────────────────────────────────────────────────
 
+  /// Loads the full profile for the currently authenticated user.
+  /// 
+  /// Returns a record containing:
+  /// - [home]: Saved home coordinates (LatLng?).
+  /// - [work]: Saved work coordinates (LatLng?).
+  /// - [avatarUrl]: The public URL for the profile picture.
+  /// - [customPins]: A list of user-defined favorite places.
+  /// 
+  /// Note: [avatarUrl] implements a fallback to Auth Metadata if the 
+  /// profiles table lookup fails or is empty.
   static Future<({LatLng? home, LatLng? work, String? avatarUrl, List<Map<String, dynamic>> customPins})>
       loadProfile() async {
     final user = _client.auth.currentUser;
@@ -27,7 +40,7 @@ class ProfileService {
 
       String? avatarUrl = data?['avatar_url'] as String?;
       
-      // Fallback to user metadata if not found in profiles table
+      // FALLBACK: Load from user metadata if not found in profiles table.
       avatarUrl ??= user?.userMetadata?['avatar_url'] as String?;
 
       if (data == null) {
@@ -42,37 +55,49 @@ class ProfileService {
       );
     } catch (e) {
       debugPrint('Error loading profile: $e');
-      // Even on error, try to return avatar from metadata
+      // On error, still return the metadata avatar if available.
       return (home: null, work: null, avatarUrl: user?.userMetadata?['avatar_url'] as String?, customPins: <Map<String, dynamic>>[]);
     }
   }
 
-  // ── Location Write ────────────────────────────────────────────────────────
+  // ── LOCATION WRITE OPERATIONS ──────────────────────────────────────────────
 
+  /// Persists the user's Home location to the database.
   static Future<void> saveHomeLocation(LatLng loc) async {
     await _upsert({'home_lat': loc.latitude, 'home_lon': loc.longitude});
   }
 
+  /// Persists the user's Work location to the database.
   static Future<void> saveWorkLocation(LatLng loc) async {
     await _upsert({'work_lat': loc.latitude, 'work_lon': loc.longitude});
   }
 
+  /// Removes the user's Home location from the database.
   static Future<void> clearHomeLocation() async {
     await _upsert({'home_lat': null, 'home_lon': null});
   }
 
+  /// Removes the user's Work location from the database.
   static Future<void> clearWorkLocation() async {
     await _upsert({'work_lat': null, 'work_lon': null});
   }
 
+  /// Saves the entire list of custom favorite pins (shortcuts) to the database.
   static Future<void> saveCustomPins(List<Map<String, dynamic>> pins) async {
     await _upsert({'custom_pins': pins});
   }
 
-  // ── Avatar ────────────────────────────────────────────────────────────────
+  // ── AVATAR OPERATIONS ──────────────────────────────────────────────────────
 
-  /// Uploads [image] to Supabase Storage and returns the public URL,
-  /// or null on failure.
+  /// Uploads a new profile picture to Supabase Storage.
+  /// 
+  /// Logic:
+  /// 1. Uploads binary data to the 'avatars' bucket.
+  /// 2. Updates the 'avatar_url' in the `profiles` table.
+  /// 3. Updates the `user_metadata` in Supabase Auth (Fallback storage).
+  /// 
+  /// [image]: The local file to upload.
+  /// Returns the public URL of the uploaded image, or null on failure.
   static Future<String?> uploadAvatar(File image) async {
     final uid = _uid;
     if (uid == null) return null;
@@ -81,7 +106,7 @@ class ProfileService {
       final bytes = await image.readAsBytes();
       final path = '$uid/avatar.jpg';
 
-      // 1. Upload to Storage
+      // 1. UPLOAD BINARY TO STORAGE
       await _client.storage.from('avatars').uploadBinary(
             path,
             bytes,
@@ -93,13 +118,13 @@ class ProfileService {
 
       final url = _client.storage.from('avatars').getPublicUrl(path);
 
-      // Cache busting: append a timestamp so the widget re-fetches the image
+      // Cache busting: append a timestamp to force high-level widgets to refresh.
       final bustUrl = '$url?t=${DateTime.now().millisecondsSinceEpoch}';
 
-      // 2. Update profiles table
+      // 2. UPDATE PROFILES TABLE
       await _upsert({'avatar_url': bustUrl});
       
-      // 3. Update auth metadata as a fallback
+      // 3. UPDATE AUTH METADATA (Dual-persistence for reliability)
       await _client.auth.updateUser(
         UserAttributes(data: {'avatar_url': bustUrl}),
       );
@@ -111,8 +136,9 @@ class ProfileService {
     }
   }
 
-  // ── Private helpers ───────────────────────────────────────────────────────
+  // ── PRIVATE HELPERS ────────────────────────────────────────────────────────
 
+  /// Performs an upsert (insert or update) on the user's profile record.
   static Future<void> _upsert(Map<String, dynamic> fields) async {
     final uid = _uid;
     if (uid == null) return;
@@ -127,8 +153,10 @@ class ProfileService {
     }
   }
 
+  /// Safe parser for LatLng data from dynamic JSON/Map fields.
   static LatLng? _parseLatLng(dynamic lat, dynamic lon) {
     if (lat == null || lon == null) return null;
     return LatLng((lat as num).toDouble(), (lon as num).toDouble());
   }
 }
+
