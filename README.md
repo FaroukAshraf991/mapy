@@ -41,7 +41,7 @@ A private, cloud-connected Flutter navigation app powered by **MapLibre GL**, OS
 - **Reset Password Screen** — native in-app screen; no redirect to a website
 
 ### 2. 🗺️ Interactive Map
-- **OpenStreetMap** tiles rendered via `flutter_map`
+- **OpenStreetMap Vector Tiles** rendered via **MapLibre GL**
 - **Dark Mode Map** — tiles are programmatically inverted via a colour matrix filter
 - **Satellite View** — toggle between street map and **Esri WorldImagery** satellite with one tap
 - **"Locate Me" Button** — requests GPS and flies the camera to the user's position
@@ -63,7 +63,7 @@ A private, cloud-connected Flutter navigation app powered by **MapLibre GL**, OS
 - After routing, a floating card shows:
   - **Distance** — e.g. `"12.3 km"` or `"850 m"`
   - **ETA** — e.g. `"~18 min"` (real OSRM estimate)
-- A **progress bar** animates at the top while the route loads
+- **Unified Bottom Stack**: Transition to a focused mode with consistent spacing and START/EXIT logic.
 
 ### 6. 🏠💼 Smart Home & Work Locations
 - Set a **Home** and **Work** pin directly on the map via a visual picker
@@ -93,9 +93,9 @@ A private, cloud-connected Flutter navigation app powered by **MapLibre GL**, OS
 ### 10. 🚗 Pro-Active 3D Navigation Engine
 - **3D Perspective (Pitch/Tilt):** Hardware-accelerated 3D tilt (up to 60 degrees) for a professional "road-ahead" view.
 - **Glide Physics:** Butter-smooth 60Hz vector interpolation for car movement between GPS updates.
-* **Smart Auto-Bearing:** Precise, hardware-synced map rotation that tracks your heading in real-time.
-* **MapLibre GL Upgrade:** Rebuilt on MapLibre 0.22.0 for superior performance and 3D vector tile rendering.
-* **Minimalist Map:** Stripped the standard compass UI for a cleaner, modern navigation aesthetic.
+- **Smart Auto-Bearing:** Precise, hardware-synced map rotation that tracks your heading in real-time.
+- **MapLibre GL Upgrade:** Rebuilt on MapLibre 0.22.0 for superior performance and 3D vector tile rendering.
+- **Minimalist Map:** Stripped the standard compass UI for a cleaner, modern navigation aesthetic.
 
 ### 11. 🕐 Smart Recent Search History
 - **Dynamic Shortcut Chips:** Your last **3 search results** are displayed as quick-access chips on the main map.
@@ -110,7 +110,7 @@ A private, cloud-connected Flutter navigation app powered by **MapLibre GL**, OS
 
 ### 13. ✨ Premium Visual Overhaul
 - **Neon Destination Marker 📍:** A custom-painted marker with a transparent center, multi-layered electric blue glow, and a subtle pulse ring.
-- **Advanced Glassmorphism:** The Route Card and UI bars use `BackdropFilter` real-time blur (10px sigma) with white-tinted borders for an "Apple-style" finish.
+- **Optimized UI Navigation Bars:** High-performance layout using the Unified Bottom Stack architecture without expensive effects.
 - **Active Navigation Mode:** Tapping "START" transitions the app into a focused mode that hides non-essential UI, zooms in on your location, and provides a "NAVIGATING..." indicator.
 - **Fluid Motion System:** All UI elements glide into place using `AnimatedSwitcher` with slide and fade transitions.
 
