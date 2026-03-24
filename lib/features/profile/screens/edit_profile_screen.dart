@@ -302,54 +302,60 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   Widget _buildAvatarSection(bool isDark, Color bgColor) {
     return Center(
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isDark ? Colors.white10 : Colors.blue.shade50,
-                width: 4,
-              ),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: CircleAvatar(
-              radius: 54,
-              backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
-              backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-              child: _avatarUrl == null
-                  ? Text(
-                      _nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : 'U',
-                      style: TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87),
-                    )
-                  : null,
-            ),
-          ),
-          if (_uploadingAvatar)
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
-                child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
-              ),
-            ),
-          Positioned(
-            bottom: 0, right: 0,
-            child: GestureDetector(
-              onTap: _pickAndUploadAvatar,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blueAccent,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: bgColor, width: 3),
+      child: Hero(
+        tag: 'profileAvatar',
+        child: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.blue.shade50,
+                  width: 4,
                 ),
-                child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 54,
+                backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+                backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                child: _avatarUrl == null
+                    ? Text(
+                        _nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : 'U',
+                        style: TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87),
+                      )
+                    : null,
               ),
             ),
-          ),
-        ],
+            if (_uploadingAvatar)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+                  child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+                ),
+              ),
+            Positioned(
+              bottom: 0, right: 0,
+              child: Material(
+                color: Colors.transparent,
+                child: GestureDetector(
+                  onTap: _pickAndUploadAvatar,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: bgColor, width: 3),
+                    ),
+                    child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

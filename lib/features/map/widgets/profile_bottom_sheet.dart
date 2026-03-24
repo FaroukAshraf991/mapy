@@ -105,20 +105,24 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                GestureDetector(
-                  onTap: _navigateToEditProfile,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Manage your Account',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: textColor.withValues(alpha: 0.8),
-                        fontWeight: FontWeight.w600,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _navigateToEditProfile,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Manage your Account',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: textColor.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -171,30 +175,33 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet> {
 
   /// Builds the large profile avatar for the header.
   Widget _buildAvatar(bool isDark) {
-    return GestureDetector(
-      onTap: _navigateToEditProfile,
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isDark ? Colors.white12 : Colors.grey.shade200,
-            width: 2,
+    return Hero(
+      tag: 'profileAvatar',
+      child: GestureDetector(
+        onTap: _navigateToEditProfile,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDark ? Colors.white12 : Colors.grey.shade200,
+              width: 2,
+            ),
           ),
-        ),
-        child: CircleAvatar(
-          radius: 28,
-          backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
-          backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-          child: _avatarUrl == null
-              ? Text(
-                  widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white70 : AppConstants.darkBackground,
-                  ),
-                )
-              : null,
+          child: CircleAvatar(
+            radius: 28,
+            backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
+            backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+            child: _avatarUrl == null
+                ? Text(
+                    widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : 'U',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : AppConstants.darkBackground,
+                    ),
+                  )
+                : null,
+          ),
         ),
       ),
     );

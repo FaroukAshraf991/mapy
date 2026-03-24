@@ -42,6 +42,8 @@ class MapSearchBar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onSearchTap,
+        splashColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+        highlightColor: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
@@ -69,24 +71,27 @@ class MapSearchBar extends StatelessWidget {
                         strokeWidth: 2, color: Colors.blueAccent),
                   ),
                 ),
-              GestureDetector(
-                onTap: onAvatarTap,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? Colors.white12 : Colors.grey.shade200,
-                      width: 1.5,
+              Hero(
+                tag: 'profileAvatar',
+                child: GestureDetector(
+                  onTap: onAvatarTap,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.grey.shade200,
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.grey.shade300,
-                    backgroundImage:
-                        avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-                    child: avatarUrl == null
-                        ? const Icon(Icons.person, color: Colors.white, size: 20)
-                        : null,
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.grey.shade300,
+                      backgroundImage:
+                          avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                      child: avatarUrl == null
+                          ? const Icon(Icons.person, color: Colors.white, size: 20)
+                          : null,
+                    ),
                   ),
                 ),
               ),
