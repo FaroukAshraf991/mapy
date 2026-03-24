@@ -265,8 +265,18 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
   }
 
   /// Toggles Active Navigation mode.
-  void _toggleNavigation() {
+  Future<void> _toggleNavigation() async {
     if (_mapController == null) return;
+
+    if (!_isNavigating) {
+      // Starting navigation: Ensure we have a location for the initial zoom
+      if (_currentLocation == null) {
+        try {
+          final pos = await Geolocator.getCurrentPosition();
+          _currentLocation = LatLng(pos.latitude, pos.longitude);
+        } catch (_) {}
+      }
+    }
 
     setState(() {
       _isNavigating = !_isNavigating;
@@ -275,30 +285,29 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
         _navigationRotation = 0.0;
         _mapController!.animateCamera(CameraUpdate.bearingTo(0));
         _mapController!.animateCamera(CameraUpdate.tiltTo(0));
-        NotificationService.cancelNavigationNotification(); // Clear on exit
+        NotificationService.cancelNavigationNotification(); 
       }
     });
 
     if (_isNavigating && _currentLocation != null) {
-      // Re-start tracking with HIGH accuracy for navigation
       _startLocationTracking();
       
+      // EXPLICIT CINEMATIC ZOOM ON START
       _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
             target: _currentLocation!,
-            zoom: 18.0, // Higher for precision
-            tilt: 60,
+            zoom: 17.5,
+            tilt: 65,
             bearing: _navigationRotation,
           ),
         ),
-        duration: const Duration(milliseconds: 1500),
+        duration: const Duration(milliseconds: 2000),
       );
     } else if (!_isNavigating) {
-      // Switch back to medium accuracy to save battery
       _startLocationTracking();
     }
-    _updateLayers(); // Ensure markers stay during navigation
+    _updateLayers(force: true); 
   }
 
   /// Toggles between 2D (0 tilt) and 3D (60 tilt) map perspective.
@@ -335,18 +344,19 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
             final lng = _previousLocation!.longitude + (newLoc.longitude - _previousLocation!.longitude) * t;
             
             _locationNotifier.value = LatLng(lat, lng);
-            _currentLocation = _locationNotifier.value; 
-
-            if (_isNavigating && _isFollowingUser) {
-              _updateNavigationPerspective(position);
-              _updateGuidance(position);
-            }
+            _currentLocation = _locationNotifier.value;
           }
         });
         _glideController?.forward();
       } else {
         _locationNotifier.value = newLoc;
         _currentLocation = newLoc;
+      }
+
+      // Mandatory updates for navigation state
+      if (_isNavigating && _isFollowingUser) {
+        _updateNavigationPerspective(position);
+        _updateGuidance(position);
       }
     });
   }
@@ -689,13 +699,13 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
               },
               onStyleLoadedCallback: () async {
                 await MapIconHelper.addStandardIcons(_mapController!);
-                _updateLayers();
+                _updateLayers(force: true);
               },
               trackCameraPosition: true, 
-              myLocationEnabled: !_isNavigating, 
-              myLocationTrackingMode: _isFollowingUser 
-                  ? MyLocationTrackingMode.trackingGps 
-                  : MyLocationTrackingMode.none,
+              myLocationEnabled: true, 
+              myLocationTrackingMode: (_isNavigating || !_isFollowingUser)
+                  ? MyLocationTrackingMode.none 
+                  : MyLocationTrackingMode.trackingGps,
               compassEnabled: false,
               onCameraIdle: () {
                 if (mounted && _mapController != null) {
@@ -740,56 +750,6 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
               ),
             ),
 
-          // 7. Destination Marker Info
-          if (_destinationLocation != null && !_isNavigating)
-            Positioned(
-              top: 180,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isDark 
-                            ? Colors.black.withValues(alpha: 0.6) 
-                            : Colors.white.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.redAccent.withValues(alpha: 0.3),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                          )
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.location_on_rounded, color: Colors.redAccent, size: 22),
-                          const SizedBox(width: 8),
-                          Text(
-                            'DESTINATION SET',
-                            style: TextStyle(
-                              color: isDark ? Colors.white : AppConstants.darkBackground,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 12,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
           // ──────────────────────────────────────────────────────────────────
           // UNIFIED BOTTOM STACK (Buttons + Trip Bar + Route Info)
@@ -889,85 +849,92 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
                           borderRadius: BorderRadius.circular(28),
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                              decoration: BoxDecoration(
-                                color: isDark 
-                                    ? Colors.black.withValues(alpha: 0.7) 
-                                    : Colors.white.withValues(alpha: 0.85),
+                            child: Material(
+                              color: isDark 
+                                  ? Colors.black.withValues(alpha: 0.7) 
+                                  : Colors.white.withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(28),
+                              child: InkWell(
+                                onTap: (_isNavigating || _routeInfo.hasRoute) ? null : _onWhereToTapped,
                                 borderRadius: BorderRadius.circular(28),
-                                border: Border.all(
-                                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          _isNavigating
-                                              ? 'ACTIVE GUIDANCE'
-                                              : (_routeInfo.hasRoute ? 'ESTIMATED TRAVEL TIME' : 'WELCOME BACK'),
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w900,
-                                            color: _isNavigating ? Colors.blueAccent : (isDark ? Colors.white38 : Colors.black38),
-                                            letterSpacing: 2.0,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          _isNavigating
-                                              ? 'Drive safely'
-                                              : (_routeInfo.hasRoute ? 'Route calculated' : 'Hello, ${widget.userName}!'),
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w900,
-                                            color: isDark ? Colors.white : Colors.black87,
-                                            letterSpacing: -0.8,
-                                          ),
-                                        ),
-                                      ],
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
+                                      width: 1.5,
                                     ),
+                                    borderRadius: BorderRadius.circular(28),
                                   ),
-                                  if (_routeInfo.hasRoute && !_isNavigating)
-                                    ElevatedButton.icon(
-                                      onPressed: _toggleNavigation,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blueAccent,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                        elevation: 8,
-                                        shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _isNavigating
+                                                  ? 'ACTIVE GUIDANCE'
+                                                  : (_routeInfo.hasRoute ? 'ESTIMATED TRAVEL TIME' : 'READY TO GO'),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w900,
+                                                color: _isNavigating ? Colors.blueAccent : (isDark ? Colors.white38 : Colors.black38),
+                                                letterSpacing: 2.0,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              _isNavigating
+                                                  ? 'Drive safely'
+                                                  : (_routeInfo.hasRoute ? 'Route calculated' : 'Where would you like to go?'),
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w900,
+                                                color: isDark ? Colors.white : Colors.black87,
+                                                letterSpacing: -0.8,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      icon: const Icon(Icons.navigation_rounded, size: 22),
-                                      label: const Text(
-                                        'START',
-                                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0),
-                                      ),
-                                    ),
-                                  if (_isNavigating)
-                                    ElevatedButton(
-                                      onPressed: _toggleNavigation,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                        elevation: 8,
-                                        shadowColor: Colors.redAccent.withValues(alpha: 0.4),
-                                      ),
-                                      child: const Text(
-                                        'EXIT',
-                                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0),
-                                      ),
-                                    ),
-                                ],
+                                      if (_routeInfo.hasRoute && !_isNavigating)
+                                        ElevatedButton.icon(
+                                          onPressed: _toggleNavigation,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blueAccent,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                            elevation: 8,
+                                            shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
+                                          ),
+                                          icon: const Icon(Icons.navigation_rounded, size: 22),
+                                          label: const Text(
+                                            'START',
+                                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0),
+                                          ),
+                                        ),
+                                      if (_isNavigating)
+                                        ElevatedButton(
+                                          onPressed: _toggleNavigation,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                            elevation: 8,
+                                            shadowColor: Colors.redAccent.withValues(alpha: 0.4),
+                                          ),
+                                          child: const Text(
+                                            'EXIT',
+                                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -1111,12 +1078,57 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
     );
   }
 
+  /// Displays the grouped search history in a glass bottom sheet.
+  void _showRecentsBottomSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => RecentsBottomSheet(
+        history: _searchHistory,
+        isDark: isDark,
+        onSelect: (place) {
+          Navigator.pop(context);
+          _navigateTo(LatLng(place.lat, place.lon));
+        },
+        onClear: () async {
+          await SearchHistoryService.clearHistory();
+          if (!mounted) return;
+          setState(() => _searchHistory = []);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
   // ── SUB-WIDGETS ────────────────────────────────────────────────────────────
 
   Widget _buildSearchAndShortcuts(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (!_isNavigating) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20, left: 4),
+            child: Text(
+              '${_getTimeBasedGreeting()}, ${widget.userName.split(' ').first}!',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+                shadows: [
+                  Shadow(
+                    color: Colors.black45,
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         MapSearchBar(
           isDark: isDark,
           isRouting: _isRouting,
@@ -1124,26 +1136,27 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
           onSearchTap: _onWhereToTapped,
           onAvatarTap: _showProfileBottomSheet,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SizedBox(
           height: 44,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                if (_searchHistory.isNotEmpty)
-                  ..._searchHistory.take(2).map((place) => Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: LocationChip(
-                      type: 'recent',
-                      icon: Icons.history_rounded,
-                      label: place.shortName,
-                      isSet: true,
-                      activeColor: Colors.purple,
-                      isDark: isDark,
-                      onTap: () => _navigateTo(LatLng(place.lat, place.lon)),
-                    ),
-                  )),
+                // 1. Grouped Recents (Dropdown Style)
+                LocationChip(
+                  type: 'recent',
+                  icon: Icons.history_rounded,
+                  label: 'Recents',
+                  isSet: _searchHistory.isNotEmpty,
+                  activeColor: Colors.purple,
+                  isDark: isDark,
+                  trailingIcon: Icons.arrow_drop_down_rounded,
+                  onTap: _showRecentsBottomSheet,
+                ),
+                const SizedBox(width: 8),
+
+                // 2. Home
                 LocationChip(
                   type: 'home',
                   icon: Icons.home_rounded,
@@ -1154,6 +1167,8 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
                   onTap: () => _handleLocationButton('home'),
                 ),
                 const SizedBox(width: 6),
+
+                // 3. Work
                 LocationChip(
                   type: 'work',
                   icon: Icons.work_rounded,
@@ -1163,6 +1178,8 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
                   isDark: isDark,
                   onTap: () => _handleLocationButton('work'),
                 ),
+
+                // 4. Custom Pins
                 ..._customPins.map((pin) => Padding(
                   padding: const EdgeInsets.only(left: 6),
                   child: LocationChip(
@@ -1177,6 +1194,8 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
                   ),
                 )),
                 const SizedBox(width: 6),
+
+                // 5. Add Shortcut
                 AddShortcutButton(isDark: isDark, onTap: _addCustomPin),
               ],
             ),
@@ -1197,7 +1216,12 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
     );
   }
 
-  // ── STYLE HELPERS ─────────────────────────────────────────────────────────
+  String _getTimeBasedGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
 
   String _getMapStyleString(bool isDark) {
     switch (_currentStyle) {
@@ -1209,12 +1233,12 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
 
 
   /// Updates all markers and route lines on the MapLibre map.
-  Future<void> _updateLayers() async {
+  Future<void> _updateLayers({bool force = false}) async {
     if (_mapController == null || _isUpdatingLayers || !mounted) return;
     
-    // Throttle to 1000ms to prevent native crashes and reduce CPU lag during rapid movement
+    // Throttle to 1000ms unless forced (critical UI state change)
     final now = DateTime.now();
-    if (_lastLayerUpdateTime != null && 
+    if (!force && _lastLayerUpdateTime != null && 
         now.difference(_lastLayerUpdateTime!).inMilliseconds < 1000) {
       return;
     }
@@ -1302,9 +1326,10 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
         }
       }
 
-      // 5. Add Home/Work
+      // 5. Add Shortcuts and Custom Pins (only when NOT navigating)
       if (!_isNavigating) {
         try {
+          // Home
           if (_homeLocation != null) {
             await _mapController!.addSymbol(
               SymbolOptions(
@@ -1314,11 +1339,22 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
               ),
             );
           }
+          // Work
           if (_workLocation != null) {
             await _mapController!.addSymbol(
               SymbolOptions(
                 geometry: _workLocation!.toLibre(),
                 iconImage: "work-pin",
+                iconSize: 0.8,
+              ),
+            );
+          }
+          // Custom Pins (Favorites)
+          for (final pin in _customPins) {
+            await _mapController!.addSymbol(
+              SymbolOptions(
+                geometry: LatLng(pin['lat'], pin['lon']),
+                iconImage: "custom-pin",
                 iconSize: 0.8,
               ),
             );

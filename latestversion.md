@@ -18,6 +18,11 @@
 - **Top Alignment**: The greeting ("Good Morning/Afternoon/Evening") has been moved to the very top of the map screen, above the search cluster, as per the design reference.
 - **Time-Based Logic**: Implemented a dynamic helper that changes the greeting based on the local time.
 - **First Name Only**: Refined the greeting to display only the user's first name for a cleaner, more personal feel.
+- **UI Decoupling**: Removed the "DESTINATION SET" floating bar from the map to keep the view focused on the location.
+- **Interactive Trip Bar**: Tapping the "Where would you like to go?" bar now correctly redirects you to the search screen with a smooth transition.
+- **Grouped Recents**: Transformed individual recent location chips into a single, elegant "Recents" tile that opens a premium glass history menu.
+- **Navigation UX Polish**: Removed redundant UI elements from the trip panel. Pins (Home/Work) now auto-hide when navigating for a focused experience.
+- **Auto-Camera Focus**: Navigation now starts with a Cinematic auto-zoom (zoom 17.5, tilt 65°) on your current location.
 
 ### 🎬 Interaction & Motion Refinements
 - **Auto-Close Map Style**: The map style selection drawer now automatically closes with a smooth downward slide animation (Navigator pop) immediately upon selecting a style.

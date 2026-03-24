@@ -12,10 +12,13 @@
 6. **Infrastructure (GitHub)**: User pushed the initial code using the provided Personal Access Token (`ghp_...`).
 8. **APK Release**: Built and pushed the production APK (`v1.4.0`) with release notes.
 
-### 🎨 Part 3: "Aetheric Glass" Design Overhaul
-9. **Greeting Bar Relocation**: Moved the time-based greeting ("Good Morning, [Name]!") to the top of the map screen, above the search bar.
-10. **Aetheric Glass Restoration**: Restored the `BackdropFilter` (blur effect) across all map overlays (Search Bar, Chips, Navigation Panels, etc.) as requested to match the premium "glass" aesthetic.
-11. **Syntax & Style Fixes**: Finalized the syntax of `navigation_overlay.dart` and ensured the blur was consistently applied.
+### 🎨 Part 3: "Aetheric Glass" Design & UI Cleanup
+9. **Greeting Bar Relocation**: Moved the time-based greeting to the top of the map.
+10. **Aetheric Glass Restoration**: Restored the `BackdropFilter` (blur effect) across all map overlays.
+11. **Destination Set Removal**: Removed the floating "DESTINATION SET" bar from the map for a cleaner search experience.
+12. **Interactive Trip Bar**: Made the bottom "Trip Bar" tappable, redirecting the user to the search screen when they tap "Where would you like to go?".
+13. **Grouped Recents**: Combined individual recent locations into a single "Recents" tile with a dropdown arrow. Tapping it opens a glass bottom sheet with the full search history.
+14. **Navigation UX**: Removed the redundant "EXIT" button from the trip details. Implemented auto-hiding for Home and Work pins during guidance. Added a smooth auto-zoom and focus to the user when navigation starts.
 
 ### 🎬 Part 4: UX & Personalization
 12. **Map Style Animation**: Implemented an automatic downward slide-out (Navigator pop) for the Map Style drawer immediately after selection.

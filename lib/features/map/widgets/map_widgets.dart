@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/map/screens/main_map_screen.dart'; // To use MapStyle enum
+import 'package:mapy/models/place_result.dart';
 
 // ── WIDGETS ──────────────────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@ class MapSearchBar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isDark 
-                  ? Colors.white.withValues(alpha: 0.08) 
+                  ? Colors.black.withValues(alpha: 0.6) 
                   : Colors.white.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
@@ -73,7 +74,7 @@ class MapSearchBar extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      'Where to?',
+                      'Search here',
                       style: TextStyle(
                         fontSize: 17,
                         color: isDark ? Colors.white70 : Colors.black87,
@@ -162,6 +163,9 @@ class LocationChip extends StatelessWidget {
   
   /// Long press callback (usually for deletion).
   final VoidCallback? onLongPress;
+  
+  /// Optional trailing icon (e.g., dropdown arrow).
+  final IconData? trailingIcon;
 
   const LocationChip({
     super.key,
@@ -173,6 +177,7 @@ class LocationChip extends StatelessWidget {
     required this.isDark,
     required this.onTap,
     this.onLongPress,
+    this.trailingIcon,
   });
 
   @override
@@ -228,6 +233,12 @@ class LocationChip extends StatelessWidget {
                       letterSpacing: 0.2,
                     ),
                   ),
+                  if (trailingIcon != null) ...[
+                    const SizedBox(width: 4),
+                    Icon(trailingIcon,
+                        color: isSet ? activeColor : (isDark ? Colors.white38 : Colors.black38),
+                        size: 16),
+                  ],
                 ],
               ),
             ),
@@ -345,8 +356,8 @@ class MapLayerSelector extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _styleItem(MapStyle.street, 'Default', Icons.map_rounded),
-              _styleItem(MapStyle.satellite, 'Satellite', Icons.satellite_alt_rounded),
+              _styleItem(context, MapStyle.street, 'Default', Icons.map_rounded),
+              _styleItem(context, MapStyle.satellite, 'Satellite', Icons.satellite_alt_rounded),
             ],
           ),
         ],
@@ -355,11 +366,14 @@ class MapLayerSelector extends StatelessWidget {
   }
 
   /// Builds an individual style selection item (Icon + Label).
-  Widget _styleItem(MapStyle style, String label, IconData icon) {
+  Widget _styleItem(BuildContext context, MapStyle style, String label, IconData icon) {
     final isSelected = currentStyle == style;
 
     return GestureDetector(
-      onTap: () => onStyleSelected(style),
+      onTap: () {
+        Navigator.pop(context);
+        onStyleSelected(style);
+      },
       child: Column(
         children: [
           Container(
@@ -521,3 +535,157 @@ class MapInfoChip extends StatelessWidget {
 
 
 
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// A premium glass bottom sheet that displays the user's search history.
+class RecentsBottomSheet extends StatelessWidget {
+  final List<PlaceResult> history;
+  final bool isDark;
+  final Function(PlaceResult) onSelect;
+  final VoidCallback onClear;
+
+  const RecentsBottomSheet({
+    super.key,
+    required this.history,
+    required this.isDark,
+    required this.onSelect,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isDark 
+        ? Colors.black.withValues(alpha: 0.85) 
+        : Colors.white.withValues(alpha: 0.9);
+        
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Locations',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : AppConstants.darkBackground,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    if (history.isNotEmpty)
+                      TextButton(
+                        onPressed: onClear,
+                        child: Text(
+                          'Clear All',
+                          style: TextStyle(
+                            color: Colors.redAccent.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              
+              const Divider(height: 1),
+              
+              if (history.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 60),
+                  child: Column(
+                    children: [
+                      Icon(Icons.history_rounded, 
+                          size: 48, color: isDark ? Colors.white12 : Colors.black12),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No recent searches',
+                        style: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.black38,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: history.length,
+                    itemBuilder: (context, index) {
+                      final place = history[index];
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.history_rounded, color: Colors.purple, size: 20),
+                        ),
+                        title: Text(
+                          place.shortName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : AppConstants.darkBackground,
+                          ),
+                        ),
+                        subtitle: Text(
+                          place.address,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isDark ? Colors.white54 : Colors.black54,
+                            fontSize: 12,
+                          ),
+                        ),
+                        onTap: () => onSelect(place),
+                      );
+                    },
+                  ),
+                ),
+                
+              const SizedBox(height: 32), // Safe area bottom
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

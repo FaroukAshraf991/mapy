@@ -24,7 +24,7 @@ This document defines the absolute "Ground Truth" for the Mapy application. Thes
 ## 🚀 Performance & Stability (High-FPS Rules)
 1. **Camera Animations**: Never exceed **100ms** for navigation-related camera transitions to prevent stuttering/stacking.
 2. **Rendering Throttle**: Use a minimum **1000ms** throttle for `_updateLayers` during routing/navigation.
-3. **Rendering Optimization**: NO `BackdropFilter` (blur). Use solid high-performance styling for all UI components to maintain 60fps.
+3. **Aetheric Glass Styling**: Use `BackdropFilter` (blur) with `ImageFilter.blur(sigmaX: 8, sigmaY: 8)` for all map overlays to provide a premium, high-fidelity experience. Ensure `withValues(alpha: ...)` is used for translucent backgrounds.
 4. **Error Hardening**: Every map layer update MUST include a 10ms stabilization delay and defensive `PlatformException` catch blocks for Android `GeoJsonSource` race conditions.
 
 ## 📦 Versioning & Repository

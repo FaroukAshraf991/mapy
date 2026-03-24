@@ -2,8 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mapy/features/map/models/route_info.dart';
-import 'package:mapy/services/geocoding_service.dart';
-import 'package:mapy/features/map/widgets/map_widgets.dart';
+ import 'package:mapy/services/geocoding_service.dart';
 
 /// Top bar overlay showing turn-by-turn guidance.
 class NavigationGuidanceBar extends StatelessWidget {
@@ -39,91 +38,76 @@ class NavigationGuidanceBar extends StatelessWidget {
         return Hero(
           tag: 'navigationGuidance',
           child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 30,
-                  offset: const Offset(0, 15),
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(24),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: isDark 
-                        ? Colors.black.withValues(alpha: 0.6) 
+                        ? Colors.black.withValues(alpha: 0.65) 
                         : Colors.white.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                   ),
                   child: Row(
                     children: [
+                      // Direction Icon with Glow
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.blueAccent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blueAccent.withValues(alpha: 0.2),
-                              blurRadius: 10,
-                            ),
-                          ],
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.blueAccent.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
                         ),
                         child: Icon(
                           step.icon,
                           color: Colors.blueAccent,
-                          size: 36,
+                          size: 32,
                         ),
                       ),
                       const SizedBox(width: 20),
+                      // Instructions
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  distanceText,
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w900,
-                                    color: Colors.blueAccent,
-                                    letterSpacing: -1.0,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  distanceUnit,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blueAccent.withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              '$distanceText $distanceUnit',
+                              style: TextStyle(
+                                color: isDark ? Colors.white70 : Colors.black54,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.2,
+                              ),
                             ),
+                            const SizedBox(height: 4),
                             Text(
                               step.instruction,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : Colors.black87,
-                                letterSpacing: 0.2,
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
                               ),
                             ),
                           ],
@@ -165,30 +149,34 @@ class RouteInfoPanel extends StatelessWidget {
     if (!routeInfo.hasRoute) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(
+        left: 16, 
+        right: 16, 
+        bottom: MediaQuery.of(context).padding.bottom + 16
+      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 25,
             offset: const Offset(0, 8),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             decoration: BoxDecoration(
               color: isDark 
-                  ? Colors.black.withValues(alpha: 0.6) 
-                  : Colors.white.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(32),
+                  ? Colors.black.withValues(alpha: 0.7) 
+                  : Colors.white.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.3),
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
                 width: 1.5,
               ),
             ),
@@ -220,45 +208,69 @@ class RouteInfoPanel extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (isNavigating)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.blueAccent.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'NAVIGATING',
-                              style: TextStyle(
-                                color: Colors.blueAccent,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 10,
-                                letterSpacing: 1.5,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (isNavigating)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'NAVIGATING',
+                                style: TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 10,
+                                  letterSpacing: 1.5,
+                                ),
                               ),
                             ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                routeInfo.etaText,
+                                style: TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blueAccent.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  routeInfo.distanceText,
+                                  style: const TextStyle(
+                                    color: Colors.blueAccent,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            MapInfoChip(
-                              icon: Icons.timer_outlined,
-                              color: Colors.blue,
-                              label: routeInfo.etaText, 
-                              isDark: isDark,
+                          const SizedBox(height: 6),
+                          Text(
+                            'Fastest route via Main St',
+                            style: TextStyle(
+                              color: isDark ? Colors.white38 : Colors.black38,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
                             ),
-                            const SizedBox(width: 16),
-                            MapInfoChip(
-                              icon: Icons.straighten_rounded,
-                              color: Colors.orange,
-                              label: routeInfo.distanceText, 
-                              isDark: isDark,
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -281,19 +293,18 @@ class RouteInfoPanel extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.purple.withValues(alpha: 0.1) : Colors.transparent,
+            color: isSelected ? Colors.blueAccent.withValues(alpha: 0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
             size: 20,
-            color: isSelected ? Colors.purple : (isDark ? Colors.white54 : Colors.black45),
+            color: isSelected ? Colors.blueAccent : (isDark ? Colors.white54 : Colors.black45),
           ),
         ),
       ),
     );
   }
-
 
   IconData _getIconForMode(TravelMode mode) {
     switch (mode) {
