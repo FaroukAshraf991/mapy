@@ -2,17 +2,6 @@
 
 A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM, and Supabase — with **no paid APIs**.
 
----
-
-## Screenshots
-
-| Login | Map (Dark Mode) |
-|:---:|:---:|
-| ![Login](screenshots/login.png) | ![Map](screenshots/map.png) |
-
-| Search | Route + ETA |
-|:---:|:---:|
-| ![Search](screenshots/search.png) | ![Route](screenshots/route.png) |
 
 ---
 
