@@ -26,13 +26,6 @@ class MapControlsOverlay extends StatelessWidget {
           color: isNavigating ? Colors.blueAccent : (isDark ? Colors.white : Colors.black87),
           bgColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         ),
-        const SizedBox(height: 12),
-        _floatingButton(
-          icon: Icons.layers_rounded,
-          onTap: onLayers,
-          color: isDark ? Colors.white70 : Colors.black54,
-          bgColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        ),
       ],
     );
   }

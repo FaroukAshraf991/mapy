@@ -286,6 +286,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 16,

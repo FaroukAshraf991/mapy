@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mapy/features/map/models/route_info.dart';
 import 'package:mapy/services/geocoding_service.dart';
 import 'package:mapy/features/map/widgets/map_widgets.dart';
@@ -7,14 +8,14 @@ import 'package:mapy/features/map/widgets/map_widgets.dart';
 class NavigationGuidanceBar extends StatelessWidget {
   final RouteInfo routeInfo;
   final int currentStepIndex;
-  final double distanceToNextStep;
+  final ValueListenable<double> distanceToNextStepNotifier;
   final bool isDark;
 
   const NavigationGuidanceBar({
     super.key,
     required this.routeInfo,
     required this.currentStepIndex,
-    required this.distanceToNextStep,
+    required this.distanceToNextStepNotifier,
     required this.isDark,
   });
 
@@ -25,71 +26,77 @@ class NavigationGuidanceBar extends StatelessWidget {
     }
     
     final step = routeInfo.steps[currentStepIndex];
-    final distanceText = distanceToNextStep > 1000 
-        ? '${(distanceToNextStep / 1000).toStringAsFixed(1)} km'
-        : '${distanceToNextStep.round()} m';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B1B1B) : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(
-              step.icon,
-              color: Colors.blueAccent,
-              size: 36,
+    return ValueListenableBuilder<double>(
+      valueListenable: distanceToNextStepNotifier,
+      builder: (context, distanceToNextStep, child) {
+        final distanceText = distanceToNextStep > 1000 
+            ? '${(distanceToNextStep / 1000).toStringAsFixed(1)} km'
+            : '${distanceToNextStep.round()} m';
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1B1B1B) : Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+            border: Border.all(
+              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+              width: 1.5,
             ),
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  distanceText,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.blueAccent,
-                    letterSpacing: -0.5,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                Text(
-                  step.instruction,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                  ),
+                child: Icon(
+                  step.icon,
+                  color: Colors.blueAccent,
+                  size: 36,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      distanceText,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.blueAccent,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      step.instruction,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -136,16 +143,22 @@ class RouteInfoPanel extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          _modeChip(TravelMode.driving, Icons.directions_car_rounded),
-                          const SizedBox(width: 4),
-                          _modeChip(TravelMode.motorcycle, Icons.motorcycle_rounded),
-                          const SizedBox(width: 4),
-                          _modeChip(TravelMode.bicycle, Icons.directions_bike_rounded),
-                          const SizedBox(width: 4),
-                          _modeChip(TravelMode.foot, Icons.directions_walk_rounded),
+                          if (!isNavigating) ...[
+                            _modeChip(TravelMode.driving, Icons.directions_car_rounded),
+                            const SizedBox(width: 4),
+                            _modeChip(TravelMode.motorcycle, Icons.motorcycle_rounded),
+                            const SizedBox(width: 4),
+                            _modeChip(TravelMode.bicycle, Icons.directions_bike_rounded),
+                            const SizedBox(width: 4),
+                            _modeChip(TravelMode.foot, Icons.directions_walk_rounded),
+                          ] else ...[
+                            // Only show active mode icon during navigation
+                            _modeChip(travelMode, _getIconForMode(travelMode)),
+                          ],
                         ],
                       ),
-                      _closeButton(),
+                      if (!isNavigating)
+                        _closeButton(),
                     ],
                   ),
                   const Divider(height: 24, thickness: 0.5),
@@ -217,6 +230,16 @@ class RouteInfoPanel extends StatelessWidget {
         ),
       ),
     );
+  }
+
+
+  IconData _getIconForMode(TravelMode mode) {
+    switch (mode) {
+      case TravelMode.driving: return Icons.directions_car_rounded;
+      case TravelMode.motorcycle: return Icons.motorcycle_rounded;
+      case TravelMode.bicycle: return Icons.directions_bike_rounded;
+      case TravelMode.foot: return Icons.directions_walk_rounded;
+    }
   }
 
   Widget _closeButton() {

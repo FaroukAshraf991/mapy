@@ -35,7 +35,10 @@ class MapIconHelper {
     final picture = pictureRecorder.endRecording();
     final image = await picture.toImage(100, 100);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    return bytes!.buffer.asUint8List();
+    if (bytes == null) {
+      return Uint8List(0); // Return empty rather than crashing
+    }
+    return bytes.buffer.asUint8List();
   }
 
   /// Adds all standard navigation icons (Home, Work, Destination, User) to the map.
@@ -48,8 +51,14 @@ class MapIconHelper {
     };
 
     for (final entry in icons.entries) {
-      final bytes = await captureIcon(entry.value[0] as IconData, entry.value[1] as Color);
-      await controller.addImage(entry.key, bytes);
+      try {
+        final bytes = await captureIcon(entry.value[0] as IconData, entry.value[1] as Color);
+        if (bytes.isNotEmpty) {
+          await controller.addImage(entry.key, bytes);
+        }
+      } catch (e) {
+        debugPrint('Icon ${entry.key} failed to add/capture: $e');
+      }
     }
   }
 }
