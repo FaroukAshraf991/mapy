@@ -88,40 +88,38 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet> {
           // ── Header (Avatar + Name) ─────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _buildAvatar(isDark),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.userName,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      GestureDetector(
-                        onTap: _navigateToEditProfile,
-                        child: Text(
-                          'Manage your Account',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.blueAccent.shade200,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 16),
+                Text(
+                  widget.userName,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.5)),
-                  onPressed: () => Navigator.pop(context),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: _navigateToEditProfile,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Manage your Account',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
