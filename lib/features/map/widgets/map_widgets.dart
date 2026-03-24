@@ -394,7 +394,7 @@ class MapInfoChip extends StatelessWidget {
   /// The icon representing the metric (e.g., straight for distance, timer for ETA).
   final IconData icon;
   
-  /// The color of the icon for visual distinction.
+  /// The color of the icon for visual distinction (defaulting to grey for modern view).
   final Color color;
   
   /// The display text (e.g., "12 min", "5.4 km").
@@ -413,10 +413,13 @@ class MapInfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Overriding the provided color with a premium grey scale as per modern design request
+    final greyColor = isDark ? Colors.white70 : Colors.black54;
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color, size: 22),
+        Icon(icon, color: greyColor, size: 22),
         const SizedBox(width: 8),
         Text(
           label,

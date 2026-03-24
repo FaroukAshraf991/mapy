@@ -570,55 +570,91 @@ class _MainMapScreenState extends State<MainMapScreen> {
             ),
           ),
 
-          // ROUTE FEEDBACK (BOTTOM-CENTER)
-          if (_routeInfo.hasRoute)
-            Positioned(
-              left: 16, right: 16, bottom: 220,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 14),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppConstants.darkBackground.withValues(alpha: 0.95)
-                      : Colors.white.withValues(alpha: 0.97),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 12,
-                        offset: Offset(0, 4)),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    MapInfoChip(
-                      icon: Icons.straighten_rounded,
-                      color: Colors.blueAccent,
-                      label: _routeInfo.distanceText,
-                      isDark: isDark,
+          // INTEGRATED BOTTOM NAVIGATION (GREETING + INFO BAR)
+          Positioned(
+            left: 16, right: 16, bottom: 40,
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOutCubic,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. GREETING BAR (TOP)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
+                          .withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2),
+                      ],
                     ),
-                    Container(
-                      height: 28,
-                      width: 1,
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      color: isDark ? Colors.white12 : Colors.black12,
+                    child: Text(
+                      'Good Morning, ${widget.userName.split(' ')[0]}!',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900, // Modern weight
+                        color: isDark ? Colors.white : AppConstants.darkBackground,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                    MapInfoChip(
-                      icon: Icons.timer_rounded,
-                      color: Colors.green,
-                      label: _routeInfo.etaText,
-                      isDark: isDark,
+                  ),
+
+                  // 2. INFO BAR (BOTTOM - Slide in grey)
+                  if (_routeInfo.hasRoute)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.grey.shade800.withValues(alpha: 0.9)
+                              : Colors.grey.shade200.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                            width: 1,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            MapInfoChip(
+                              icon: Icons.straighten_rounded,
+                              color: Colors.grey, // Now overridden internally to grey
+                              label: _routeInfo.distanceText,
+                              isDark: isDark,
+                            ),
+                            Container(
+                              height: 24,
+                              width: 1,
+                              margin: const EdgeInsets.symmetric(horizontal: 24),
+                              color: isDark ? Colors.white12 : Colors.black12,
+                            ),
+                            MapInfoChip(
+                              icon: Icons.timer_rounded,
+                              color: Colors.grey,
+                              label: _routeInfo.etaText,
+                              isDark: isDark,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
+          ),
 
-          // QUICK ACTIONS (FLOATING RIGHT)
+          // QUICK ACTIONS (FLOATING RIGHT - Above the bottom stack)
           Positioned(
             right: 16,
-            bottom: 115, // Just above the bottom container
+            bottom: 120, // Adjusted to be above the greeting bar
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -629,40 +665,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
                   isDark: isDark,
                 ),
               ],
-            ),
-          ),
-
-          // PERSISTENT WELCOME BAR (BOTTOM)
-          Positioned(
-            left: 16, right: 16, bottom: 40,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
-                    .withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: const [
-                  BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      spreadRadius: 2),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Good Morning, ${widget.userName.split(' ')[0]}!',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? Colors.white
-                            : AppConstants.darkBackground),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
