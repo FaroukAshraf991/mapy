@@ -118,6 +118,16 @@ A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM
 - **Real-Time Recalculation:** Tapping a mode immediately updates the ETA and distance based on OSRM profiles.
 - **Contextual Actions:** "START" and "EXIT" buttons are integrated directly into the travel mode selection row for a compact, intuitive control set.
 
+### 15. 🔔 Live Navigation Notifications
+- **Turn-by-Turn Guidance:** Shows the current instruction and remaining distance directly in the system notification drawer.
+- **Ongoing Service:** The notification remains active and "ongoing" during navigation, ensuring you never lose your way even if the app is in the background.
+- **Live Updates:** Instructions and distances are updated in real-time as you move along the route.
+
+### 16. 🏗️ Global Brand Identity
+- **Premium 3D App Icon:** A high-end, custom-designed 3D pin icon used consistently across the launcher, app switcher, and system settings.
+- **Synchronized Splash Screen:** A matching high-resolution 3D splash screen (`splash_v4.png`) with perfect `#010B13` background integration for a seamless transition from the OS to the app.
+- **Adaptive Logo System:** Fully configured adaptive icons for modern Android devices, ensuring a borderless, premium look.
+
 ---
 
 ## Privacy & Security
