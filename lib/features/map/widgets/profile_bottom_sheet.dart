@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mapy/main.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/services/profile_service.dart';
 import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/screens/login_screen.dart';
 import 'package:mapy/features/profile/screens/edit_profile_screen.dart';
+import 'package:mapy/features/settings/screens/settings_screen.dart';
 
 /// A modern, Google Maps-style bottom sheet for user profile and account management.
 /// Replaces the legacy side drawer with a sleek, floating-card aesthetic.
@@ -42,10 +41,13 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet> {
     setState(() => _avatarUrl = profile.avatarUrl);
   }
 
-  /// Navigates to the Edit Profile screen and handles the return sync.
+  /// Opens the Edit Profile interface as a draggable bottom sheet.
   void _navigateToEditProfile() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const EditProfileScreen(),
     ).then((_) {
       _loadAvatar();
       widget.onProfileUpdate?.call();
@@ -129,56 +131,17 @@ class _ProfileBottomSheetState extends State<ProfileBottomSheet> {
 
           // ── Menu Options ─────────────────────────────────────────────────
           _buildMenuItem(
-            icon: Icons.history_rounded,
-            label: 'Your Timeline',
-            isDark: isDark,
-            onTap: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Timeline feature coming soon!')),
-              );
-            },
-          ),
-          _buildMenuItem(
             icon: Icons.settings_rounded,
             label: 'Settings',
             isDark: isDark,
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming soon!')),
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
           
-          // ── Theme Toggle ─────────────────────────────────────────────────
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: themeNotifier,
-            builder: (context, currentMode, _) {
-              final isDarkTheme = currentMode == ThemeMode.dark;
-              return SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                title: Text('Dark Theme',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white70 : Colors.black87,
-                    )),
-                secondary: Icon(
-                  isDarkTheme ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                  color: isDarkTheme ? Colors.blueAccent : Colors.orange,
-                  size: 24,
-                ),
-                value: isDarkTheme,
-                onChanged: (bool value) async {
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setBool('isDarkTheme', value);
-                  themeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
-                },
-              );
-            },
-          ),
-
           const SizedBox(height: 8),
           Divider(color: isDark ? Colors.white12 : Colors.black12, height: 1),
 

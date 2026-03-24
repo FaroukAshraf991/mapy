@@ -131,9 +131,9 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                     child: Container(
                       padding: const EdgeInsets.all(32.0),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.8),
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(32),
-                        border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05), width: 1.5),
+                        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05), width: 1.5),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -141,7 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                         children: [
                           Text('Join Mapy', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: textColor, letterSpacing: 1.5), textAlign: TextAlign.center),
                           const SizedBox(height: 8),
-                          Text('Create your profile', style: TextStyle(fontSize: 16, color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54), textAlign: TextAlign.center),
+                          Text('Create your profile', style: TextStyle(fontSize: 16, color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54), textAlign: TextAlign.center),
                           const SizedBox(height: 32),
                           AuthTextField(controller: _nameController, hint: 'Full Name', icon: Icons.person_rounded, isDark: isDark),
                           const SizedBox(height: 20),
@@ -151,16 +151,16 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                               decoration: BoxDecoration(
-                                color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.8),
+                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.8),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isDark ? Colors.white.withOpacity(0.3) : Colors.grey.shade300,
+                                  color: isDark ? Colors.white.withValues(alpha: 0.3) : Colors.grey.shade300,
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.cake_rounded, color: isDark ? Colors.white.withOpacity(0.7) : Colors.black87),
+                                  Icon(Icons.cake_rounded, color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black87),
                                   const SizedBox(width: 12),
                                   Text(
                                     _dateOfBirth != null
@@ -170,7 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                       fontSize: 16,
                                       color: _dateOfBirth != null
                                           ? (isDark ? Colors.white : Colors.black87)
-                                          : (isDark ? Colors.white.withOpacity(0.5) : Colors.black54),
+                                          : (isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black54),
                                     ),
                                   ),
                                 ],
@@ -208,5 +208,4 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       ),
     );
   }
-
 }

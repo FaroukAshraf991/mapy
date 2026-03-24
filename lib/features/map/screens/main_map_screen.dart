@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/map/screens/next_where_to_screen.dart';
 import 'package:mapy/features/map/screens/pick_location_screen.dart';
@@ -58,14 +59,29 @@ class _MainMapScreenState extends State<MainMapScreen> {
   @override
   void initState() {
     super.initState();
-    // Load initial data after the first frame to ensure the map is ready.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _relocateMe();
-      _loadSavedProfile();
+    _loadSavedProfile();
+    _relocateMe();
+    _loadSettings();
+  }
+
+  /// Loads persistent user preferences from SharedPreferences.
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedStyle = prefs.getString('default_map_style') ?? 'street';
+    
+    if (!mounted) return;
+    setState(() {
+      if (savedStyle == 'satellite') {
+        _currentStyle = MapStyle.satellite;
+      } else if (savedStyle == 'terrain') {
+        _currentStyle = MapStyle.terrain;
+      } else {
+        _currentStyle = MapStyle.street;
+      }
     });
   }
 
-  /// Fetches the user's saved locations and avatar from Supabase.
+  /// Refetches the user's profile data (home, work, avatar, etc.)
   Future<void> _loadSavedProfile() async {
     final profile = await ProfileService.loadProfile();
     if (!mounted) return;

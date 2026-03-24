@@ -10,6 +10,9 @@ import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/screens/update_password_screen.dart';
 import 'package:mapy/features/profile/widgets/profile_widgets.dart';
 
+/// A modern, draggable profile editing interface presented as a bottom sheet.
+/// This "drawer-like" experience allows users to update their profile without
+/// leaving the map context.
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -42,7 +45,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   void initState() {
     super.initState();
     _animController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 800));
+        vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
@@ -77,7 +80,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     super.dispose();
   }
 
-  // ── Logic Methods ────────────────────────────────────────────────────────
+  // ── LOGIC METHODS ─────────────────────────────────────────────────────────
 
   Future<void> _saveName() async {
     final name = _nameController.text.trim();
@@ -109,8 +112,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     if (error != null) {
       _showError(error);
     } else {
-      _showSuccess(
-          'Verification email sent to $email. Please check your inbox.');
+      _showSuccess('Verification email sent to $email.');
     }
   }
 
@@ -151,14 +153,11 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   Future<void> _handleForgotPassword() async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user?.email == null) {
-      _showError('No user email found.');
-      return;
-    }
+    if (user?.email == null) return;
     final error = await AuthService.resetPassword(user!.email!);
     if (!mounted) return;
     if (error == null) {
-      _showSuccess('Password reset link sent to ${user.email}!');
+      _showSuccess('Password reset link sent!');
     } else {
       _showError(error);
     }
@@ -172,12 +171,10 @@ class _EditProfileScreenState extends State<EditProfileScreen>
 
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
-    final XFile? picked =
-        await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final XFile? picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked == null || !mounted) return;
 
     setState(() => _uploadingAvatar = true);
-
     final url = await ProfileService.uploadAvatar(File(picked.path));
 
     if (!mounted) return;
@@ -186,11 +183,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       _uploadingAvatar = false;
     });
 
-    if (url != null) {
-      _showSuccess('Profile picture updated!');
-    } else {
-      _showError('Upload failed. Please try again.');
-    }
+    if (url != null) _showSuccess('Profile picture updated!');
   }
 
   Future<void> _pickDate() async {
@@ -199,414 +192,348 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       initialDate: DateTime(2000, 1, 1),
       firstDate: DateTime(1920),
       lastDate: DateTime.now(),
-      helpText: 'Select your date of birth',
     );
-    if (picked != null) {
-      setState(() => _tempDOB = picked);
-    }
+    if (picked != null) setState(() => _tempDOB = picked);
   }
 
   Future<void> _saveDOB() async {
-    if (_tempDOB == null) {
-      _showError('Please select a date first.');
-      return;
-    }
+    if (_tempDOB == null) return;
     setState(() => _savingDOB = true);
     final dobStr = DateFormat('yyyy-MM-dd').format(_tempDOB!);
     final error = await AuthService.updateDOB(dobStr);
     if (!mounted) return;
-    setState(() => _savingDOB = false);
+    setState(() {
+      _savingDOB = false;
+      if (error == null) _dobString = dobStr;
+    });
     if (error != null) {
       _showError(error);
     } else {
-      setState(() => _dobString = dobStr);
-      _showSuccess('Date of Birth updated successfully.');
+      _showSuccess('Date of Birth updated!');
     }
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.redAccent));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.redAccent));
   }
 
   void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? AppConstants.darkBackground : AppConstants.lightBackground;
+    final bgColor = isDark ? const Color(0xFF121212) : Colors.white;
     final textColor = isDark ? Colors.white : AppConstants.darkBackground;
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Edit Profile',
-            style: TextStyle(
-                color: textColor, fontWeight: FontWeight.w800, fontSize: 22)),
-        centerTitle: true,
-        iconTheme: IconThemeData(color: textColor),
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
+      child: Column(
+        children: [
+          // ── Drag Handle ───────────────────────────────────────────────────
+          Container(
+            width: 40, height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white12 : Colors.black12,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // ── Header ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // ── Avatar Section ────────────────────────────────────────
-                Center(
-                  child: Stack(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.1)
-                                : Colors.blue.shade100,
-                            width: 4,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: isDark
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : Colors.grey.shade100,
-                          backgroundImage: _avatarUrl != null
-                              ? NetworkImage(_avatarUrl!)
-                              : null,
-                          child: _avatarUrl == null
-                              ? Text(
-                                  _nameController.text.isNotEmpty
-                                      ? _nameController.text[0].toUpperCase()
-                                      : 'U',
-                                  style: TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : AppConstants.darkBackground,
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
-                      if (_uploadingAvatar)
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _pickAndUploadAvatar,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.blueAccent,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: bgColor, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt_rounded,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(context),
+                  color: textColor.withValues(alpha: 0.5),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  _nameController.text,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: textColor,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // ── Name Section ──────────────────────────────────────────
-                ProfileSectionCard(
-                  title: 'Display Name',
-                  icon: Icons.person_rounded,
-                  iconColor: Colors.blueAccent,
-                  isDark: isDark,
-                  children: [
-                    ProfileTextField(
-                      controller: _nameController,
-                      hint: 'Full Name',
-                      icon: Icons.person_outline_rounded,
-                      isDark: isDark,
-                    ),
-                    const SizedBox(height: 16),
-                    ProfileActionButton(
-                      label: 'Save Name',
-                      isLoading: _savingName,
-                      onPressed: _saveName,
-                      isDark: isDark,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Date of Birth Section ─────────────────────────────────
-                _buildDOBSection(isDark, textColor),
-
-                const SizedBox(height: 20),
-
-                // ── Email Section ─────────────────────────────────────────
-                ProfileSectionCard(
-                  title: 'Email Address',
-                  icon: Icons.email_rounded,
-                  iconColor: Colors.orange,
-                  isDark: isDark,
-                  children: [
-                    ProfileTextField(
-                      controller: _emailController,
-                      hint: 'Email Address',
-                      icon: Icons.email_outlined,
-                      isDark: isDark,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'A verification email will be sent to your new address.',
-                      style: TextStyle(
-                          fontSize: 12, color: textColor.withOpacity(0.5)),
-                    ),
-                    const SizedBox(height: 16),
-                    ProfileActionButton(
-                      label: 'Update Email',
-                      isLoading: _savingEmail,
-                      onPressed: _saveEmail,
-                      isDark: isDark,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // ── Password Section ──────────────────────────────────────
-                ProfileSectionCard(
-                  title: 'Change Password',
-                  icon: Icons.lock_rounded,
-                  iconColor: Colors.redAccent,
-                  isDark: isDark,
-                  children: [
-                    ProfileTextField(
-                      controller: _currentPasswordController,
-                      hint: 'Current Password',
-                      icon: Icons.lock_outline_rounded,
-                      isDark: isDark,
-                      isPassword: true,
-                    ),
-                    const SizedBox(height: 14),
-                    ProfileTextField(
-                      controller: _newPasswordController,
-                      hint: 'New Password',
-                      icon: Icons.lock_rounded,
-                      isDark: isDark,
-                      isPassword: true,
-                    ),
-                    const SizedBox(height: 14),
-                    ProfileTextField(
-                      controller: _confirmPasswordController,
-                      hint: 'Confirm New Password',
-                      icon: Icons.lock_rounded,
-                      isDark: isDark,
-                      isPassword: true,
-                    ),
-                    const SizedBox(height: 16),
-                    ProfileActionButton(
-                      label: 'Change Password',
-                      isLoading: _savingPassword,
-                      onPressed: _changePassword,
-                      isDark: isDark,
-                      isDestructive: true,
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _handleForgotPassword,
-                        child: Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.white.withOpacity(0.6)
-                                : AppConstants.darkBackground.withOpacity(0.5),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
+                Text('Edit Profile',
+                    style: TextStyle(
+                        color: textColor, fontWeight: FontWeight.w800, fontSize: 20)),
+                const SizedBox(width: 48), // Spacer to balance the close button
               ],
             ),
           ),
-        ),
+
+          Expanded(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  children: [
+                    // ── Avatar Section ────────────────────────────────────────
+                    _buildAvatarSection(isDark, bgColor),
+                    const SizedBox(height: 12),
+                    Text(
+                      _nameController.text,
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: textColor),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // ── Form Sections ──────────────────────────────────────────
+                    _buildNameSection(isDark),
+                    const SizedBox(height: 20),
+                    _buildDOBSection(isDark, textColor),
+                    const SizedBox(height: 20),
+                    _buildEmailSection(isDark, textColor),
+                    const SizedBox(height: 20),
+                    _buildPasswordSection(isDark, textColor),
+                    
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ── Section-specific builders for complex logic ──────────────────────────
-
-  Widget _buildDOBSection(bool isDark, Color textColor) {
-    if (_dobString != null) {
-      return ProfileSectionCard(
-        title: 'Personal Info',
-        icon: Icons.cake_rounded,
-        iconColor: Colors.purpleAccent,
-        isDark: isDark,
+  Widget _buildAvatarSection(bool isDark, Color bgColor) {
+    return Center(
+      child: Stack(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color:
-                  isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(14),
+              shape: BoxShape.circle,
               border: Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.grey.shade200,
-                width: 1,
+                color: isDark ? Colors.white10 : Colors.blue.shade50,
+                width: 4,
               ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today_rounded,
-                    color: isDark ? Colors.white.withOpacity(0.4) : Colors.black38,
-                    size: 20),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Date of Birth',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? Colors.white.withOpacity(0.5)
-                              : Colors.black45,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _dobString!,
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Icon(Icons.lock_outline_rounded,
-                    color: isDark ? Colors.white.withOpacity(0.2) : Colors.black12,
-                    size: 16),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4)),
               ],
             ),
+            child: CircleAvatar(
+              radius: 54,
+              backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+              backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+              child: _avatarUrl == null
+                  ? Text(
+                      _nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : 'U',
+                      style: TextStyle(fontSize: 38, fontWeight: FontWeight.bold, color: isDark ? Colors.white70 : Colors.black87),
+                    )
+                  : null,
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Date of birth cannot be changed after registration.',
-            style: TextStyle(
-                fontSize: 11,
-                color: textColor.withOpacity(0.4),
-                fontStyle: FontStyle.italic),
+          if (_uploadingAvatar)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+                child: const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
+              ),
+            ),
+          Positioned(
+            bottom: 0, right: 0,
+            child: GestureDetector(
+              onTap: _pickAndUploadAvatar,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: bgColor, width: 3),
+                ),
+                child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+              ),
+            ),
           ),
         ],
-      );
-    }
+      ),
+    );
+  }
 
+  Widget _buildNameSection(bool isDark) {
     return ProfileSectionCard(
-      title: 'Set Date of Birth',
+      title: 'Display Name',
+      icon: Icons.person_rounded,
+      iconColor: Colors.blueAccent,
+      isDark: isDark,
+      children: [
+        ProfileTextField(
+          controller: _nameController,
+          hint: 'Full Name',
+          icon: Icons.person_outline_rounded,
+          isDark: isDark,
+        ),
+        const SizedBox(height: 16),
+        ProfileActionButton(
+          label: 'Save Name',
+          isLoading: _savingName,
+          onPressed: _saveName,
+          isDark: isDark,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailSection(bool isDark, Color textColor) {
+    return ProfileSectionCard(
+      title: 'Email Address',
+      icon: Icons.email_rounded,
+      iconColor: Colors.orange,
+      isDark: isDark,
+      children: [
+        ProfileTextField(
+          controller: _emailController,
+          hint: 'Email Address',
+          icon: Icons.email_outlined,
+          isDark: isDark,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        const SizedBox(height: 8),
+        Text('A verification email will be sent to your new address.',
+            style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.5))),
+        const SizedBox(height: 16),
+        ProfileActionButton(
+          label: 'Update Email',
+          isLoading: _savingEmail,
+          onPressed: _saveEmail,
+          isDark: isDark,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPasswordSection(bool isDark, Color textColor) {
+    return ProfileSectionCard(
+      title: 'Change Password',
+      icon: Icons.lock_rounded,
+      iconColor: Colors.redAccent,
+      isDark: isDark,
+      children: [
+        ProfileTextField(
+          controller: _currentPasswordController,
+          hint: 'Current Password',
+          icon: Icons.lock_outline_rounded,
+          isDark: isDark,
+          isPassword: true,
+        ),
+        const SizedBox(height: 14),
+        ProfileTextField(
+          controller: _newPasswordController,
+          hint: 'New Password',
+          icon: Icons.lock_rounded,
+          isDark: isDark,
+          isPassword: true,
+        ),
+        const SizedBox(height: 14),
+        ProfileTextField(
+          controller: _confirmPasswordController,
+          hint: 'Confirm New Password',
+          icon: Icons.lock_rounded,
+          isDark: isDark,
+          isPassword: true,
+        ),
+        const SizedBox(height: 16),
+        ProfileActionButton(
+          label: 'Change Password',
+          isLoading: _savingPassword,
+          onPressed: _changePassword,
+          isDark: isDark,
+          isDestructive: true,
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: _handleForgotPassword,
+            child: Text('Forgot Password?',
+                style: TextStyle(color: textColor.withValues(alpha: 0.5), fontWeight: FontWeight.w600, fontSize: 13)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDOBSection(bool isDark, Color textColor) {
+    bool hasDOB = _dobString != null;
+    return ProfileSectionCard(
+      title: hasDOB ? 'Personal Info' : 'Set Date of Birth',
       icon: Icons.cake_rounded,
       iconColor: Colors.purpleAccent,
       isDark: isDark,
       children: [
-        Text(
-          'Your birth date is missing. Please set it once to complete your profile.',
-          style: TextStyle(fontSize: 13, color: textColor.withOpacity(0.6)),
-        ),
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: _pickDate,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: isDark ? Colors.white.withOpacity(0.2) : Colors.grey.shade300,
-                  width: 1),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.calendar_today_rounded,
-                    color: isDark ? Colors.white70 : Colors.black87, size: 20),
-                const SizedBox(width: 12),
-                Text(
-                  _tempDOB != null
-                      ? DateFormat('MMMM d, yyyy').format(_tempDOB!)
-                      : 'Pick Birthday',
-                  style: TextStyle(
-                      fontSize: 16,
-                      color: _tempDOB != null
-                          ? (isDark ? Colors.white : Colors.black87)
-                          : (isDark ? Colors.white.withOpacity(0.4) : Colors.black38)),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        ProfileActionButton(
-          label: 'Save Date of Birth',
-          isLoading: _savingDOB,
-          onPressed: _saveDOB,
-          isDark: isDark,
-        ),
+        if (hasDOB) ...[
+          _buildDOBDisplay(isDark),
+          const SizedBox(height: 8),
+          Text('Date of birth cannot be changed after registration.',
+              style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.4), fontStyle: FontStyle.italic)),
+        ] else ...[
+          Text('Your birth date is missing. Please set it once to complete your profile.',
+              style: TextStyle(fontSize: 13, color: textColor.withValues(alpha: 0.6))),
+          const SizedBox(height: 16),
+          _buildDOBPicker(isDark),
+          const SizedBox(height: 16),
+          ProfileActionButton(label: 'Save Date of Birth', isLoading: _savingDOB, onPressed: _saveDOB, isDark: isDark),
+        ],
       ],
+    );
+  }
+
+  Widget _buildDOBDisplay(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today_rounded, color: isDark ? Colors.white24 : Colors.black38, size: 20),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Date of Birth',
+                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black45, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 2),
+              Text(_dobString!,
+                  style: TextStyle(fontSize: 16, color: isDark ? Colors.white70 : Colors.black54, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const Spacer(),
+          Icon(Icons.lock_outline_rounded, color: isDark ? Colors.white10 : Colors.black12, size: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDOBPicker(bool isDark) {
+    return GestureDetector(
+      onTap: _pickDate,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: isDark ? Colors.white24 : Colors.grey.shade300),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              _tempDOB != null ? DateFormat('MMMM d, yyyy').format(_tempDOB!) : 'Pick Birthday',
+              style: TextStyle(
+                fontSize: 16,
+                color: _tempDOB != null ? (isDark ? Colors.white : Colors.black87) : (isDark ? Colors.white24 : Colors.black38),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

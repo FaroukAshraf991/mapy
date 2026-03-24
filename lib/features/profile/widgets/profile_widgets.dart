@@ -21,11 +21,11 @@ class ProfileSectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardColor = isDark
-        ? Colors.white.withOpacity(0.05)
-        : Colors.white.withOpacity(0.8);
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.white.withValues(alpha: 0.8);
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.05);
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.05);
     final textColor = isDark ? Colors.white : AppConstants.darkBackground;
 
     return ClipRRect(
@@ -47,7 +47,7 @@ class ProfileSectionCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.12),
+                    color: iconColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: iconColor, size: 20),
@@ -90,10 +90,10 @@ class ProfileTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textColor = isDark ? Colors.white : Colors.black87;
-    final hintColor = isDark ? Colors.white.withOpacity(0.5) : Colors.black54;
-    final iconColor = isDark ? Colors.white.withOpacity(0.7) : Colors.black87;
+    final hintColor = isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black54;
+    final iconColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black87;
     final fillColor =
-        isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade50;
+        isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade50;
 
     return TextField(
       controller: controller,
@@ -113,7 +113,7 @@ class ProfileTextField extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
                 color: isDark
-                    ? Colors.white.withOpacity(0.2)
+                    ? Colors.white.withValues(alpha: 0.2)
                     : Colors.grey.shade300,
                 width: 1)),
         focusedBorder: OutlineInputBorder(
