@@ -7,7 +7,7 @@ class AppConstants {
   static const String supabaseAnonKey = Secrets.supabaseAnonKey;
 
   // Theme Colors (matching splash screen)
-  static const Color lightBackground = Color(0xFFF8F9FA);
-  static const Color darkBackground = Color(0xFF0F2027);
+  static const Color lightBackground = Color(0xFFE0E0E0); // Grey 300
+  static const Color darkBackground = Color(0xFF2C2C2C); // Dark Grey
 }
 
