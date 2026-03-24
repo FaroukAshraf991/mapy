@@ -17,16 +17,17 @@ A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM
 
 | Layer | Technology |
 |---|---|
-| UI Framework | Flutter (Dart) |
-| Map Engine | OpenStreetMap via `flutter_map` |
-| Backend / Auth | Supabase (Postgres + Auth + Storage) |
-| Geocoding | Nominatim (free OpenStreetMap API) |
-| Routing | OSRM — Open Source Routing Machine |
-| Location | `geolocator` package |
-| Local Storage | `shared_preferences` |
-| Image Upload | `image_picker` + Supabase Storage |
+| **UI Framework** | Flutter (Dart) |
+| **Map Engine** | **MapLibre GL 0.22.0** (OpenStreetMap Vector Tiles) |
+| **Backend / Auth** | **Supabase** (Postgres + Real-time Auth + Storage) |
+| **Animations** | `flutter_animate` + **Global Hero Motion** |
+| **Notifications** | `flutter_local_notifications` (Live Guidance) |
+| **Geocoding** | **Nominatim** (Free OpenStreetMap Geocoding) |
+| **Routing** | **OSRM** (Open Source Routing Machine) |
+| **Location** | `geolocator` + `permission_handler` |
+| **Image Upload** | `image_picker` + Supabase Storage |
 
-> All third-party APIs (Nominatim, OSRM, OSM tiles) are **100% free and require no API key**.
+> All third-party APIs (Nominatim, OSRM, OSM tiles) are **100% free and require NO API key**.
 
 ---
 
