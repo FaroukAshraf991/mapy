@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/features/map/screens/main_map_screen.dart'; // To use MapStyle enum
@@ -34,68 +35,98 @@ class MapSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(32),
-      elevation: 6,
-      shadowColor: Colors.black26,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onSearchTap,
-        splashColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-        highlightColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              Icon(Icons.search,
-                  color: isDark ? Colors.white70 : Colors.black54, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  'Search here',
-                  style: TextStyle(
-                    fontSize: 17,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black45 : Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.08) 
+                  : Colors.white.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.2),
+                width: 1.5,
               ),
-              if (isRouting)
-                const Padding(
-                  padding: EdgeInsets.only(right: 12),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.blueAccent),
-                  ),
-                ),
-              Hero(
-                tag: 'profileAvatar',
-                child: GestureDetector(
-                  onTap: onAvatarTap,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark ? Colors.white12 : Colors.grey.shade200,
-                        width: 1.5,
+            ),
+            child: InkWell(
+              onTap: onSearchTap,
+              borderRadius: BorderRadius.circular(32),
+              child: Row(
+                children: [
+                  const SizedBox(width: 8),
+                  Icon(Icons.search,
+                      color: isDark ? Colors.cyanAccent : Colors.blueAccent, size: 24),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'Where to?',
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Colors.grey.shade300,
-                      backgroundImage:
-                          avatarUrl != null ? NetworkImage(avatarUrl!) : null,
-                      child: avatarUrl == null
-                          ? const Icon(Icons.person, color: Colors.white, size: 20)
-                          : null,
+                  ),
+                  if (isRouting)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.blueAccent),
+                      ),
+                    ),
+                  Hero(
+                    tag: 'profileAvatar',
+                    child: GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.cyanAccent.withValues(alpha: 0.4),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            if (isDark)
+                              BoxShadow(
+                                color: Colors.cyanAccent.withValues(alpha: 0.2),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          backgroundImage:
+                              avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                          child: avatarUrl == null
+                              ? const Icon(Icons.person_rounded, color: Colors.white, size: 20)
+                              : null,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -147,49 +178,59 @@ class LocationChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textColor = isDark ? Colors.white : AppConstants.darkBackground;
-    final bgColor = (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
-        .withValues(alpha: 0.9);
-
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(24),
-      elevation: 4,
-      shadowColor: Colors.black12,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon,
-                  color:
-                      isSet ? activeColor : (isDark ? Colors.white38 : Colors.black38),
-                  size: 18),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.08) 
+                  : Colors.white.withValues(alpha: 0.65),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isSet 
+                    ? activeColor.withValues(alpha: 0.4) 
+                    : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05)),
+                width: 1.5,
               ),
-              if (isSet && type != 'custom')
-                Padding(
-                  padding: const EdgeInsets.only(left: 6),
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
+            ),
+            child: InkWell(
+              onTap: onTap,
+              onLongPress: onLongPress,
+              borderRadius: BorderRadius.circular(24),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon,
+                      color: isSet ? activeColor : (isDark ? Colors.white38 : Colors.black38),
+                      size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                      letterSpacing: 0.2,
                     ),
                   ),
-                ),
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -224,15 +265,39 @@ class MapActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-      elevation: 4,
-      shadowColor: Colors.black26,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: IconButton(
-        icon: Icon(icon, color: color, size: 24),
-        onPressed: onPressed,
+    return Container(
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.1) 
+                  : Colors.white.withValues(alpha: 0.7),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+            ),
+            child: IconButton(
+              icon: Icon(icon, color: color, size: 24),
+              onPressed: onPressed,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -278,11 +343,10 @@ class MapLayerSelector extends StatelessWidget {
                   color: isDark ? Colors.white : Colors.black87)),
           const SizedBox(height: 24),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _styleItem(MapStyle.street, 'Default', Icons.map_rounded),
               _styleItem(MapStyle.satellite, 'Satellite', Icons.satellite_alt_rounded),
-              _styleItem(MapStyle.terrain, 'Terrain', Icons.terrain_rounded),
             ],
           ),
         ],
@@ -351,34 +415,55 @@ class AddShortcutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
-        .withValues(alpha: 0.9);
     final foregroundColor = isDark ? Colors.white70 : Colors.black54;
 
-    return Material(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(24),
-      elevation: 4,
-      shadowColor: Colors.black12,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_rounded, color: foregroundColor, size: 20),
-              const SizedBox(width: 4),
-              Text(
-                'Add',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: foregroundColor,
-                ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.08) 
+                  : Colors.white.withValues(alpha: 0.65),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                width: 1.5,
               ),
-            ],
+            ),
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(24),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_rounded, color: foregroundColor, size: 20),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Add',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: foregroundColor,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

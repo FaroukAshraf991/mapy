@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/services.dart'; // Required for PlatformException
 import 'dart:math' as math;
 import 'dart:async';
@@ -44,7 +45,7 @@ class MainMapScreen extends StatefulWidget {
 }
 
 /// Available styles for the map tiles.
-enum MapStyle { street, satellite, terrain }
+enum MapStyle { street, satellite }
 
 class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProviderStateMixin {
   // ── CORE STATE ─────────────────────────────────────────────────────────────
@@ -113,34 +114,6 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
   }
   ''';
 
-  // Terrain Style JSON (OpenTopoMap)
-  final String _terrainStyleJson = '''
-  {
-    "version": 8,
-    "sources": {
-      "terrain": {
-        "type": "raster",
-        "tiles": [
-          "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
-          "https://b.tile.opentopomap.org/{z}/{x}/{y}.png",
-          "https://c.tile.opentopomap.org/{z}/{x}/{y}.png"
-        ],
-        "tileSize": 256,
-        "attribution": "Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)"
-      }
-    },
-    "layers": [
-      {
-        "id": "terrain",
-        "type": "raster",
-        "source": "terrain",
-        "minzoom": 0,
-        "maxzoom": 17
-      }
-    ]
-  }
-  ''';
-
   @override
   void initState() {
     super.initState();
@@ -175,8 +148,6 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
     setState(() {
       if (savedStyle == 'satellite') {
         _currentStyle = MapStyle.satellite;
-      } else if (savedStyle == 'terrain') {
-        _currentStyle = MapStyle.terrain;
       } else {
         _currentStyle = MapStyle.street;
       }
@@ -776,31 +747,45 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
               left: 0,
               right: 0,
               child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: (isDark ? Colors.grey.shade900 : Colors.white).withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                      )
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.red, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Destination set',
-                        style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.bold,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isDark 
+                            ? Colors.black.withValues(alpha: 0.6) 
+                            : Colors.white.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.redAccent.withValues(alpha: 0.3),
+                          width: 1.5,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                          )
+                        ],
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.location_on_rounded, color: Colors.redAccent, size: 22),
+                          const SizedBox(width: 8),
+                          Text(
+                            'DESTINATION SET',
+                            style: TextStyle(
+                              color: isDark ? Colors.white : AppConstants.darkBackground,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -858,7 +843,7 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
                         const SizedBox(height: 12),
                         // 2D/3D Perspective
                         MapActionButton(
-                          icon: _is3dMode ? Icons.view_in_ar_rounded : Icons.flatware_rounded,
+                          icon: _is3dMode ? Icons.apartment_rounded : Icons.map_rounded,
                           onPressed: _toggleMapPerspective,
                           color: Colors.orangeAccent,
                           isDark: isDark,
@@ -890,89 +875,102 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
                       ),
                       child: Container(
                         key: ValueKey('trip_bar_${_routeInfo.hasRoute}_$_isNavigating'),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         decoration: BoxDecoration(
-                          color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
-                              .withValues(alpha: 0.95),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              color: isDark ? Colors.black45 : Colors.black12,
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                              offset: const Offset(0, 4),
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 25,
+                              offset: const Offset(0, 8),
                             ),
                           ],
-                          border: Border.all(
-                            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                            width: 1.5,
-                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                              decoration: BoxDecoration(
+                                color: isDark 
+                                    ? Colors.black.withValues(alpha: 0.7) 
+                                    : Colors.white.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(28),
+                                border: Border.all(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.4),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    _isNavigating
-                                        ? 'ACTIVE NAVIGATION'
-                                        : (_routeInfo.hasRoute ? 'TRIP TO DESTINATION' : 'READY TO GO?'),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: _isNavigating ? Colors.blueAccent : (isDark ? Colors.white38 : Colors.black38),
-                                      letterSpacing: 1.2,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _isNavigating
+                                              ? 'ACTIVE GUIDANCE'
+                                              : (_routeInfo.hasRoute ? 'ESTIMATED TRAVEL TIME' : 'WELCOME BACK'),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w900,
+                                            color: _isNavigating ? Colors.blueAccent : (isDark ? Colors.white38 : Colors.black38),
+                                            letterSpacing: 2.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          _isNavigating
+                                              ? 'Drive safely'
+                                              : (_routeInfo.hasRoute ? 'Route calculated' : 'Hello, ${widget.userName}!'),
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w900,
+                                            color: isDark ? Colors.white : Colors.black87,
+                                            letterSpacing: -0.8,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _isNavigating
-                                        ? 'Safety first!'
-                                        : (_routeInfo.hasRoute ? 'Destination set' : 'Hello, ${widget.userName}!'),
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      color: isDark ? Colors.white : Colors.black87,
-                                      letterSpacing: -0.5,
+                                  if (_routeInfo.hasRoute && !_isNavigating)
+                                    ElevatedButton.icon(
+                                      onPressed: _toggleNavigation,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blueAccent,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                        elevation: 8,
+                                        shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
+                                      ),
+                                      icon: const Icon(Icons.navigation_rounded, size: 22),
+                                      label: const Text(
+                                        'START',
+                                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0),
+                                      ),
                                     ),
-                                  ),
+                                  if (_isNavigating)
+                                    ElevatedButton(
+                                      onPressed: _toggleNavigation,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                        elevation: 8,
+                                        shadowColor: Colors.redAccent.withValues(alpha: 0.4),
+                                      ),
+                                      child: const Text(
+                                        'EXIT',
+                                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
-                            if (_routeInfo.hasRoute && !_isNavigating)
-                              ElevatedButton.icon(
-                                onPressed: _toggleNavigation,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueAccent,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  elevation: 4,
-                                ),
-                                icon: const Icon(Icons.navigation_rounded, size: 20),
-                                label: const Text(
-                                  'START',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
-                              ),
-                            if (_isNavigating)
-                              ElevatedButton(
-                                onPressed: _toggleNavigation,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.redAccent,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  elevation: 4,
-                                ),
-                                child: const Text(
-                                  'EXIT',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
-                              ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -1204,7 +1202,6 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
   String _getMapStyleString(bool isDark) {
     switch (_currentStyle) {
       case MapStyle.satellite: return _satelliteStyleJson;
-      case MapStyle.terrain: return _terrainStyleJson;
       case MapStyle.street: return isDark ? _darkStyleUrl : _osmStyleUrl;
     }
   }
