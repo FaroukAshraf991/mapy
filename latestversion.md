@@ -3,7 +3,7 @@
 ## 📍 Project Status Overview
 **Current Date**: March 24, 2026
 **Current Version**: `1.1.0+2` (Aetheric Glass Release)
-**Repository State**: Fully synced with `v1.4.0` GitHub Release tag.
+**Repository State**: Fully synced with `v1.5.0` tag (APK committed to `/releases`).
 
 ---
 
