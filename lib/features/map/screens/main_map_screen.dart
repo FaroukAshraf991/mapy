@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart'; 
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as ll; // Keep for models
@@ -18,6 +16,9 @@ import 'package:mapy/services/search_history_service.dart';
 import 'package:mapy/features/map/models/route_info.dart';
 import 'package:mapy/features/map/widgets/map_widgets.dart';
 import 'package:mapy/services/notification_service.dart';
+import 'package:mapy/features/map/utils/map_icon_helper.dart';
+import 'package:mapy/features/map/widgets/navigation_overlay.dart';
+import 'package:mapy/features/map/widgets/map_controls_overlay.dart';
 
 /// Helper extensions to bridge between latlong2 and maplibre_gl
 extension LatLngllExt on ll.LatLng {
@@ -700,7 +701,7 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
                 _relocateMe();
               },
               onStyleLoadedCallback: () async {
-                await _addDefaultIcons();
+                await MapIconHelper.addStandardIcons(_mapController!);
                 _updateLayers();
               },
               trackCameraPosition: false, // Potentially improves scroll performance
@@ -722,329 +723,76 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
             ),
           ),
 
-          // ── Top Navigation Guidance Bar ───────────────────────────────
+          // ── Integrated Overlays ──────────────────────────────────────────
+          
+          // 1. Top Search & Shortcuts (Only when not navigating)
+          if (!_isNavigating)
+            Positioned(
+              top: 60, left: 16, right: 16,
+              child: _buildSearchAndShortcuts(isDark),
+            ),
+
+          // 2. Top Navigation Guidance (Only when navigating)
           if (_isNavigating)
             Positioned(
               top: MediaQuery.of(context).padding.top + 10,
-              left: 12,
-              right: 12,
-              child: _topGuidanceBar(isDark),
-            ),
-
-          // Routing/Loading Progress Bar
-          if (_isRouting)
-            Positioned(
-              top: 0, left: 0, right: 0,
-              child: LinearProgressIndicator(
-                color: Colors.blueAccent,
-                backgroundColor: Colors.blueAccent.withValues(alpha: 0.15),
+              left: 12, right: 12,
+              child: NavigationGuidanceBar(
+                routeInfo: _routeInfo,
+                currentStepIndex: _currentStepIndex,
+                distanceToNextStep: _distanceToNextStep,
+                isDark: isDark,
               ),
             ),
 
-          // MAIN SEARCH UI (TOP)
-          if (!_isNavigating)
-            Positioned(
-              top: 60,
-              left: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Builder(
-                    builder: (context) => MapSearchBar(
-                      isDark: isDark,
-                      isRouting: _isRouting,
-                      avatarUrl: _avatarUrl,
-                      onSearchTap: _onWhereToTapped,
-                      onAvatarTap: () => _showProfileBottomSheet(),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Horizontal Shortcut List
-                  SizedBox(
-                    height: 44,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.antiAlias,
-                      padding: EdgeInsets.zero,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          // Dynamic History Chips
-                          if (_searchHistory.isEmpty)
-                            LocationChip(
-                              type: 'recent',
-                              icon: Icons.history_rounded,
-                              label: 'Recent',
-                              isSet: false,
-                              activeColor: Colors.purple,
-                              isDark: isDark,
-                              onTap: _onWhereToTapped,
-                            )
-                          else
-                            ..._searchHistory.take(3).map((place) => Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: LocationChip(
-                                type: 'recent',
-                                icon: Icons.history_rounded,
-                                label: place.shortName,
-                                isSet: true,
-                                activeColor: Colors.purple,
-                                isDark: isDark,
-                                onTap: () => _navigateTo(LatLng(place.lat, place.lon)),
-                              ),
-                            )),
-                          if (_searchHistory.isNotEmpty) const SizedBox(width: 6),
-                          LocationChip(
-                            type: 'home',
-                            icon: Icons.home_rounded,
-                            label: 'Home',
-                            isSet: _homeLocation != null,
-                            activeColor: Colors.blue,
-                            isDark: isDark,
-                            onTap: () => _handleLocationButton('home'),
-                          ),
-                          const SizedBox(width: 6),
-                          LocationChip(
-                            type: 'work',
-                            icon: Icons.work_rounded,
-                            label: 'Work',
-                            isSet: _workLocation != null,
-                            activeColor: Colors.orange,
-                            isDark: isDark,
-                            onTap: () => _handleLocationButton('work'),
-                          ),
-                          ..._customPins.map((pin) => Padding(
-                            padding: const EdgeInsets.only(left: 6),
-                            child: LocationChip(
-                              type: 'custom',
-                              icon: Icons.place_rounded,
-                              label: pin['label'],
-                              isSet: true,
-                              activeColor: Colors.teal,
-                              isDark: isDark,
-                              onTap: () => _navigateTo(LatLng(pin['lat'], pin['lon'])),
-                              onLongPress: () => _deleteCustomPin(pin),
-                            ),
-                          )),
-                          const SizedBox(width: 6),
-                          AddShortcutButton(
-                            isDark: isDark,
-                            onTap: _addCustomPin,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Layers Overlay Toggle
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MapActionButton(
-                          icon: Icons.layers_rounded,
-                          onPressed: _showLayersMenu,
-                          color: Colors.blueAccent,
-                          isDark: isDark,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-
-          // INTEGRATED BOTTOM NAVIGATION (GREETING + INFO BAR)
+          // 3. Floating Controls (Relocate, Layers)
           Positioned(
-            left: 16, right: 16, bottom: 40,
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOutCubic,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // 1. LOCATE ME BUTTON
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: MapActionButton(
-                        icon: Icons.my_location,
-                        onPressed: _relocateMe,
-                        color: Colors.green,
-                        isDark: isDark,
-                      ),
-                    ),
-                  ),
-
-                  // 2. GREETING BAR (Show trip status or greeting)
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.2),
-                          end: Offset.zero,
-                        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-                        child: child,
-                      ),
-                    ),
-                    child: Container(
-                      key: ValueKey('greeting_${_routeInfo.hasRoute}_$_isNavigating'),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: (isDark ? Colors.grey.shade900 : Colors.grey.shade100)
-                            .withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark ? Colors.black45 : Colors.black12,
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                         _isNavigating
-                           ? 'ACTIVE NAVIGATION'
-                           : (_routeInfo.hasRoute ? 'Trip to destination' : 'Good Morning, ${widget.userName.split(' ')[0]}!'),
-                        style: TextStyle(
-                          fontSize: (_routeInfo.hasRoute || _isNavigating) ? 18 : 20,
-                          fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.white : AppConstants.darkBackground,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // 3. ROUTE / INFO CARD
-                  if (_routeInfo.hasRoute)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 600),
-                        child: Container(
-                          key: ValueKey('route_card_$_isNavigating'),
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? Colors.grey.shade900.withValues(alpha: 0.9)
-                                : Colors.grey.shade100.withValues(alpha: 0.95),
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: isDark ? Colors.black54 : Colors.black12,
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // TOP ROW: MODES & START/EXIT
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (!_isNavigating) ...[
-                                    _modeButton(TravelMode.driving, Icons.directions_car_rounded, isDark),
-                                    const SizedBox(width: 8),
-                                    _modeButton(TravelMode.bicycle, Icons.directions_bike_rounded, isDark),
-                                    const SizedBox(width: 8),
-                                    _modeButton(TravelMode.foot, Icons.directions_walk_rounded, isDark),
-                                  ] else ...[
-                                    _modeButton(_travelMode, _getModeIcon(_travelMode), isDark),
-                                  ],
-                                  
-                                  const SizedBox(width: 12),
-                                  ElevatedButton(
-                                    onPressed: _toggleNavigation,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _isNavigating 
-                                          ? Colors.redAccent.withValues(alpha: 0.8)
-                                          : Colors.blueAccent,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                      elevation: 4,
-                                    ),
-                                    child: Text(
-                                      _isNavigating ? 'EXIT' : 'START', 
-                                      style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // BOTTOM ROW: TRIP METRICS & CLEAR
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      if (_isNavigating)
-                                        const Padding(
-                                          padding: EdgeInsets.only(bottom: 4),
-                                          child: Text(
-                                            'NAVIGATING...',
-                                            style: TextStyle(
-                                              color: Colors.blueAccent,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 10,
-                                              letterSpacing: 1.2,
-                                            ),
-                                          ),
-                                        ),
-                                      Row(
-                                        children: [
-                                          MapInfoChip(
-                                            icon: Icons.timer_outlined,
-                                            color: Colors.blue,
-                                            label: _routeInfo.etaText, 
-                                            isDark: isDark,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          MapInfoChip(
-                                            icon: Icons.straighten_rounded,
-                                            color: Colors.orange,
-                                            label: _routeInfo.distanceText, 
-                                            isDark: isDark,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  _clearButton(isDark),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+            bottom: _routeInfo.hasRoute ? 180 : 40,
+            right: 20,
+            child: MapControlsOverlay(
+              isNavigating: _isNavigating,
+              onRelocate: _relocateMe,
+              onLayers: _showLayersMenu,
+              isDark: isDark,
             ),
           ),
+
+          // 4. Route Info Panel (When a route is active)
+          if (_routeInfo.hasRoute)
+            Positioned(
+              bottom: 0, left: 0, right: 0,
+              child: RouteInfoPanel(
+                routeInfo: _routeInfo,
+                isNavigating: _isNavigating,
+                travelMode: _travelMode,
+                isDark: isDark,
+                onClear: _clearRoute,
+                onModeSelect: _setTravelMode,
+              ),
+            ),
+
+          // 5. Start Navigation Button (When route is ready but not started)
+          if (_routeInfo.hasRoute && !_isNavigating)
+            Positioned(
+              bottom: 150,
+              left: 0, right: 0,
+              child: Center(
+                child: FloatingActionButton.extended(
+                  onPressed: _toggleNavigation,
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.navigation_rounded),
+                  label: const Text('START NAVIGATION', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+
+          // 6. Progress Indicator
+          if (_isRouting)
+            const Positioned(
+              top: 0, left: 0, right: 0,
+              child: LinearProgressIndicator(color: Colors.blueAccent),
+            ),
         ],
       ),
     );
@@ -1158,206 +906,92 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
     );
   }
 
-  /// Interactive button for switching travel modes.
-  Widget _modeButton(TravelMode mode, IconData icon, bool isDark) {
-    final isSelected = _travelMode == mode;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _isNavigating ? null : () => _setTravelMode(mode),
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Colors.purple.withValues(alpha: 0.2)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? Colors.purple.withValues(alpha: 0.5) : Colors.transparent,
-              width: 1,
-            ),
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: isSelected
-                ? Colors.purple
-                : (isDark ? Colors.white54 : Colors.black45),
-          ),
+  // ── SUB-WIDGETS ────────────────────────────────────────────────────────────
+
+  Widget _buildSearchAndShortcuts(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        MapSearchBar(
+          isDark: isDark,
+          isRouting: _isRouting,
+          avatarUrl: _avatarUrl,
+          onSearchTap: _onWhereToTapped,
+          onAvatarTap: _showProfileBottomSheet,
         ),
-      ),
-    );
-  }
-
-  /// Builds the modern minimal clear route button.
-  Widget _clearButton(bool isDark) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: _clearRoute,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.close_rounded,
-            size: 20,
-            color: isDark ? Colors.white70 : Colors.black54,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── NAVIGATION UI OVERLAY ──────────────────────────────────────────────────
-
-  Widget _topGuidanceBar(bool isDark) {
-    if (_routeInfo.steps.isEmpty || _currentStepIndex >= _routeInfo.steps.length) {
-      return const SizedBox.shrink();
-    }
-    
-    final step = _routeInfo.steps[_currentStepIndex];
-    final distanceText = _distanceToNextStep > 1000 
-        ? '${(_distanceToNextStep / 1000).toStringAsFixed(1)} km'
-        : '${_distanceToNextStep.round()} m';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B1B1B) : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(
-              step.icon,
-              color: Colors.blueAccent,
-              size: 36,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 44,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                Text(
-                  distanceText,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.blueAccent,
-                    letterSpacing: -0.5,
-                  ),
+                if (_searchHistory.isNotEmpty)
+                  ..._searchHistory.take(2).map((place) => Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: LocationChip(
+                      type: 'recent',
+                      icon: Icons.history_rounded,
+                      label: place.shortName,
+                      isSet: true,
+                      activeColor: Colors.purple,
+                      isDark: isDark,
+                      onTap: () => _navigateTo(LatLng(place.lat, place.lon)),
+                    ),
+                  )),
+                LocationChip(
+                  type: 'home',
+                  icon: Icons.home_rounded,
+                  label: 'Home',
+                  isSet: _homeLocation != null,
+                  activeColor: Colors.blue,
+                  isDark: isDark,
+                  onTap: () => _handleLocationButton('home'),
                 ),
-                Text(
-                  step.instruction,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                  ),
+                const SizedBox(width: 6),
+                LocationChip(
+                  type: 'work',
+                  icon: Icons.work_rounded,
+                  label: 'Work',
+                  isSet: _workLocation != null,
+                  activeColor: Colors.orange,
+                  isDark: isDark,
+                  onTap: () => _handleLocationButton('work'),
                 ),
+                ..._customPins.map((pin) => Padding(
+                  padding: const EdgeInsets.only(left: 6),
+                  child: LocationChip(
+                    type: 'custom',
+                    icon: Icons.place_rounded,
+                    label: pin['label'],
+                    isSet: true,
+                    activeColor: Colors.teal,
+                    isDark: isDark,
+                    onTap: () => _navigateTo(LatLng(pin['lat'], pin['lon'])),
+                    onLongPress: () => _deleteCustomPin(pin),
+                  ),
+                )),
+                const SizedBox(width: 6),
+                AddShortcutButton(isDark: isDark, onTap: _addCustomPin),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // ── LAYER MANAGEMENT ──────────────────────────────────────────────────────
+  // ── STYLE HELPERS ─────────────────────────────────────────────────────────
 
-  /// Returns the appropriate style URL or JSON for the current state.
   String _getMapStyleString(bool isDark) {
     switch (_currentStyle) {
-      case MapStyle.satellite:
-        return _satelliteStyleJson;
-      case MapStyle.terrain:
-        return _terrainStyleJson;
-      case MapStyle.street:
-        return isDark ? _darkStyleUrl : _osmStyleUrl;
+      case MapStyle.satellite: return _satelliteStyleJson;
+      case MapStyle.terrain: return _terrainStyleJson;
+      case MapStyle.street: return isDark ? _darkStyleUrl : _osmStyleUrl;
     }
   }
 
-  /// Loads default marker icons into the map style.
-  /// Helper to convert a Material Icon to a byte array for MapLibre.
-  Future<Uint8List> _captureIcon(IconData icon, Color color) async {
-    final pictureRecorder = ui.PictureRecorder();
-    final canvas = Canvas(pictureRecorder);
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    
-    textPainter.text = TextSpan(
-      text: String.fromCharCode(icon.codePoint),
-      style: TextStyle(
-        fontSize: 100.0,
-        fontFamily: icon.fontFamily,
-        package: icon.fontPackage,
-        color: color,
-        shadows: [
-          Shadow(
-            blurRadius: 10.0,
-            color: Colors.black.withValues(alpha: 0.3),
-            offset: const Offset(2, 2),
-          ),
-        ],
-      ),
-    );
-    
-    textPainter.layout();
-    textPainter.paint(canvas, Offset.zero);
-    
-    final picture = pictureRecorder.endRecording();
-    final image = await picture.toImage(100, 100);
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    return bytes!.buffer.asUint8List();
-  }
 
-  Future<void> _addDefaultIcons() async {
-    if (_mapController == null) return;
-    
-    try {
-      final destBytes = await _captureIcon(Icons.location_on_rounded, Colors.redAccent);
-      await _mapController!.addImage("dest-pin", destBytes);
-
-      final homeBytes = await _captureIcon(Icons.home_rounded, Colors.blueAccent);
-      await _mapController!.addImage("home-pin", homeBytes);
-
-      final workBytes = await _captureIcon(Icons.work_rounded, Colors.orangeAccent);
-      await _mapController!.addImage("work-pin", workBytes);
-
-      final userBytes = await _captureIcon(Icons.navigation_rounded, Colors.blueAccent);
-      await _mapController!.addImage("user-arrow", userBytes);
-      
-      _isIconsLoaded = true;
-    } catch (e) {
-      debugPrint("Error loading icons: $e");
-    }
-  }
 
   /// Updates all markers and route lines on the MapLibre map.
   Future<void> _updateLayers() async {
@@ -1376,7 +1010,8 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
     try {
       // Safety: ensure icons are loaded if possible
     if (!_isIconsLoaded) {
-      await _addDefaultIcons();
+      await MapIconHelper.addStandardIcons(_mapController!);
+      _isIconsLoaded = true;
     }
 
     await _mapController!.clearSymbols();
@@ -1458,18 +1093,5 @@ class _MainMapScreenState extends State<MainMapScreen> with SingleTickerProvider
       _isUpdatingLayers = false;
     }
   }
-
-  /// Helper to get the icon for a specific TravelMode.
-  IconData _getModeIcon(TravelMode mode) {
-    switch (mode) {
-      case TravelMode.driving:
-        return Icons.directions_car_rounded;
-      case TravelMode.bicycle:
-        return Icons.directions_bike_rounded;
-      case TravelMode.foot:
-        return Icons.directions_walk_rounded;
-      case TravelMode.motorcycle:
-        return Icons.directions_bike_rounded; // Fallback to bike for now
-    }
-  }
 }
+
