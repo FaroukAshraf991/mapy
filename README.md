@@ -1,13 +1,13 @@
 # Mapy 🗺️
 
-A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM, and Supabase — with **no paid APIs**.
+A private, cloud-connected Flutter navigation app powered by **MapLibre GL**, OSRM, and Supabase — with **no paid APIs**.
 
 
 ---
 
 ## What is Mapy?
 
-**Mapy** is a private, cloud-connected maps and navigation application built with **Flutter** for Android. It gives users a fully personal map experience — from secure login to saving home/work locations in the cloud, searching any real-world address, and drawing road-following routes with live ETA and distance estimates. Every piece of data is private to each user, stored securely in **Supabase** (a cloud Postgres database).
+**Mapy** is a high-performance navigation application built with **Flutter** for Android. It gives users a fully personal map experience — from secure login to saving home/work locations in the cloud, searching any real-world address, and drawing road-following 3D routes (via MapLibre GL) with live ETA and distance estimates. Every piece of data is private to each user, stored securely in **Supabase**.
 
 > *"A personal navigation companion that knows where you live, where you work, and gets you there — beautifully."*
 
@@ -17,16 +17,17 @@ A private, cloud-connected Flutter navigation app powered by OpenStreetMap, OSRM
 
 | Layer | Technology |
 |---|---|
-| UI Framework | Flutter (Dart) |
-| Map Engine | OpenStreetMap via `flutter_map` |
-| Backend / Auth | Supabase (Postgres + Auth + Storage) |
-| Geocoding | Nominatim (free OpenStreetMap API) |
-| Routing | OSRM — Open Source Routing Machine |
-| Location | `geolocator` package |
-| Local Storage | `shared_preferences` |
-| Image Upload | `image_picker` + Supabase Storage |
+| **UI Framework** | Flutter (Dart) |
+| **Map Engine** | **MapLibre GL 0.22.0** (Vector Tiles) |
+| **Backend / Auth** | **Supabase** (Postgres + Auth + Storage) |
+| **Animations** | `flutter_animate` + **Global Hero Motion** |
+| **Notifications** | `flutter_local_notifications` (Live Guidance) |
+| **Geocoding** | **Nominatim** (Free OpenStreetMap API) |
+| **Routing** | **OSRM** (Open Source Routing Machine) |
+| **Location** | `geolocator` + `permission_handler` |
+| **Image Upload** | `image_picker` + Supabase Storage |
 
-> All third-party APIs (Nominatim, OSRM, OSM tiles) are **100% free and require no API key**.
+> All third-party APIs (Nominatim, OSRM, OSM tiles) are **100% free and require NO API key**.
 
 ---
 
