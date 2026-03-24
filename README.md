@@ -132,17 +132,17 @@ A private, cloud-connected Flutter navigation app powered by **MapLibre GL**, OS
 ---
 
 ## Privacy & Security
-- **Supabase RLS:** Row-Level Security ensures users can only access their own profile data and coordinates.
-- **Secure Auth:** Passwords managed entirely by Supabase Auth — never stored locally or in plain text.
-- **Cloud Synchronization:** Your Home/Work locations and custom pins follow you across devices.
+- **Supabase RLS**: Row-Level Security ensures users can only access their own profile data and coordinates.
+- **Secure Auth**: Passwords managed entirely by Supabase Auth — never stored locally or in plain text.
+- **Cloud Synchronization**: Your Home/Work locations and custom pins follow you across devices.
 
 ---
 
 ## What Makes it Stand Out
-1. **No Paid APIs:** OSM, OSRM, and Nominatim are used to provide high-end features at zero cost.
-2. **Professional 3D Engine:** High-performance vector map with tilt and rotation support.
-3. **Immersive UI:** Neon aesthetics, glassmorphism, and fluid motion design.
-4. **Seamless Password Resets:** Deep-link handling allows users to reset passwords natively inside the app.
+1. **No Paid APIs**: OSM, OSRM, and Nominatim are used to provide high-end features at zero cost.
+2. **Professional 3D Engine**: High-performance vector map with tilt and rotation support.
+3. **Immersive UI**: Neon aesthetics, glassmorphism, and fluid motion design.
+4. **Seamless Password Resets**: Deep-link handling allows users to reset passwords natively inside the app.
 
 ---
 
@@ -160,8 +160,9 @@ cp lib/core/config/secrets.dart.example lib/core/config/secrets.dart
 ```
 Then open `lib/core/config/secrets.dart` and fill in your Supabase project URL and anon key.
 
-### 3. Create the Supabase `profiles` table
+### 3. Create the Supabase profiles table
 Run this SQL in your **Supabase SQL Editor** to create the required table and RLS policies:
+
 ```sql
 CREATE TABLE public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -184,8 +185,8 @@ CREATE POLICY "Allow insert for owners" ON public.profiles FOR INSERT WITH CHECK
 CREATE POLICY "Allow update for owners" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 ```
 
-### 4. Create the Supabase `avatars` storage bucket
-- Create a bucket named `avatars` and set it to **Public**.
+### 4. Create the Supabase avatars storage bucket
+- Create a bucket named **avatars** and set it to **Public**.
 - Add policies allowing authenticated users to INSERT and UPDATE their own files.
 
 ### 5. Run the app
@@ -196,6 +197,7 @@ flutter run
 
 ## Architecture
 Feature-based clean architecture:
+
 ```
 lib/
 ├── core/
