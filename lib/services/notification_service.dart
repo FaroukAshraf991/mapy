@@ -1,9 +1,11 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:mapy/core/constants/app_constants.dart';
 
 /// Service to handle persistent navigation notifications on the lockscreen.
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   /// Initialize the notification system and request permissions.
   static Future<void> initialize() async {
@@ -11,32 +13,33 @@ class NotificationService {
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      const InitializationSettings initializationSettings = InitializationSettings(
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
         android: initializationSettingsAndroid,
       );
 
-      await _notificationsPlugin.initialize(initializationSettings);
+      await _notificationsPlugin.initialize(
+        settings: initializationSettings,
+      );
 
-      // Request notification permissions for Android 13+
       if (await Permission.notification.isDenied) {
         await Permission.notification.request();
       }
-    } catch (_) {
-      // Silently fail on unsupported platforms
-    }
+    } catch (_) {}
   }
+
+  static String? _lastInstruction;
+  static String? _lastDistance;
 
   /// Shows or updates a persistent navigation notification.
   static Future<void> showNavigationNotification({
     required String instruction,
     required String distance,
   }) async {
-    // Only support Android for now (Live Activity style)
-    if (!const bool.fromEnvironment('dart.library.html') && 
-        ! (DateTime.now().isAfter(DateTime(1970)))) { // Dummy check
-    }
-    
-    // Proper check using targetPlatform is better, but this is a quick safety:
+    if (instruction == _lastInstruction && distance == _lastDistance) return;
+    _lastInstruction = instruction;
+    _lastDistance = distance;
+
     try {
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
@@ -56,18 +59,16 @@ class NotificationService {
           NotificationDetails(android: androidPlatformChannelSpecifics);
 
       await _notificationsPlugin.show(
-        888,
-        distance,
-        instruction,
-        platformChannelSpecifics,
+        id: AppConstants.notificationId,
+        title: distance,
+        body: instruction,
+        notificationDetails: platformChannelSpecifics,
       );
-    } catch (_) {
-      // Silently fail on unsupported platforms
-    }
+    } catch (_) {}
   }
 
   /// Clears the navigation notification.
   static Future<void> cancelNavigationNotification() async {
-    await _notificationsPlugin.cancel(888);
+    await _notificationsPlugin.cancel(id: AppConstants.notificationId);
   }
 }

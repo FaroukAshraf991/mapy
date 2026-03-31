@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Flutter",
+            "request": "launch",
+            "type": "dart",
+            "dartEntrypointArgs": [],
+            "flutterRunArgs": [
+                "--dart-define=SUPABASE_URL=https://admnocqbnyvhmzseehek.supabase.co",
+                "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkbW5vY3Fibnl2aG16c2VlaGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMTUwMjcsImV4cCI6MjA4OTc5MTAyN30.Ds_55j8BHkhe5dKpg9l9jkJCoRoqqsGFg_lMWIK0ifY"
+            ]
+        },
+        {
+            "name": "Flutter (Profile Mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterRunArgs": [
+                "--profile",
+                "--dart-define=SUPABASE_URL=https://admnocqbnyvhmzseehek.supabase.co",
+                "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkbW5vY3Fibnl2aG16c2VlaGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMTUwMjcsImV4cCI6MjA4OTc5MTAyN30.Ds_55j8BHkhe5dKpg9l9jkJCoRoqqsGFg_lMWIK0ifY"
+            ]
+        },
+        {
+            "name": "Flutter (Release Mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterRunArgs": [
+                "--release",
+                "--dart-define=SUPABASE_URL=https://admnocqbnyvhmzseehek.supabase.co",
+                "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkbW5vY3Fibnl2aG16c2VlaGVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMTUwMjcsImV4cCI6MjA4OTc5MTAyN30.Ds_55j8BHkhe5dKpg9l9jkJCoRoqqsGFg_lMWIK0ifY"
+            ]
+        }
+    ]
+}

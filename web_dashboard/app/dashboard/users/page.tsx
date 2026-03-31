@@ -1,89 +1,70 @@
-import { getSupabaseAdmin } from "@/lib/supabase";
-import { format } from "date-fns";
+"use client"
 
-export const dynamic = 'force-dynamic';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Search, UserPlus, Mail, MoreHorizontal, Shield } from "lucide-react"
 
-export default async function UsersPage() {
-  const supabaseAdmin = getSupabaseAdmin();
-  
-  // Fetch users from Auth (requires Service Role Key)
-  let users: any[] = [];
-  try {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-    if (error) throw error;
-    users = data.users;
-  } catch (e) {
-    console.error("Failed to fetch users (check service role key):", e);
-  }
+const users = [
+  { id: 1, name: "John Doe", email: "john@example.com", role: "Admin", status: "Active", avatar: "JD" },
+  { id: 2, name: "Jane Smith", email: "jane@example.com", role: "Editor", status: "Active", avatar: "JS" },
+  { id: 3, name: "Mike Johnson", email: "mike@example.com", role: "Viewer", status: "Inactive", avatar: "MJ" },
+  { id: 4, name: "Sarah Wilson", email: "sarah@example.com", role: "Editor", status: "Active", avatar: "SW" },
+  { id: 5, name: "Tom Brown", email: "tom@example.com", role: "Viewer", status: "Active", avatar: "TB" },
+]
 
+export default function UsersPage() {
   return (
-    <div className="space-y-8">
-      <header className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">User Directory</h1>
-          <p className="text-white/50 mt-1">Manage all application users and permissions.</p>
-        </div>
-        <div className="flex gap-3">
-          <input 
-            type="text" 
-            placeholder="Search users..." 
-            className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 min-w-[240px]"
-          />
-        </div>
-      </header>
-
-      <div className="glass-card overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/5 text-sm font-semibold text-white/70">
-              <th className="px-6 py-4">User</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Created</th>
-              <th className="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-white/30 italic">
-                  No users found or Service Role Key not configured.
-                </td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id} className="hover:bg-white/5 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{user.email}</span>
-                      <span className="text-xs text-white/40 font-mono">{user.id.substring(0, 12)}...</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      user.email_confirmed_at ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                    }`}>
-                      {user.email_confirmed_at ? "Verified" : "Pending"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-white/50">
-                    {format(new Date(user.created_at), "MMM dd, yyyy")}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-bold">
-                        Edit
-                      </button>
-                      <button className="px-3 py-1 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 hover:bg-blue-600/30 text-xs font-bold transition-all">
-                        Reset Pwd
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
+        <Button className="w-full sm:w-auto"><UserPlus className="h-4 w-4 mr-2" />Add User</Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Users</CardTitle>
+              <CardDescription>Manage your team members</CardDescription>
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input placeholder="Search users..." className="pl-10" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {users.map((user) => (
+              <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <Avatar className="h-10 w-10 sm:h-8 sm:w-8">
+                    <AvatarFallback>{user.avatar}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-sm sm:text-base">{user.name}</p>
+                    <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Mail className="h-3 w-3" /><span className="truncate max-w-[150px] sm:max-w-none">{user.email}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-4 ml-14 sm:ml-0">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <span className="text-xs sm:text-sm">{user.role}</span>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded-full ${user.status === "Active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}>
+                    {user.status}
+                  </span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }

@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
-/// Helper class to handle the translation of Flutter Material Icons 
+/// Helper class to handle the translation of Flutter Material Icons
 /// into byte-backed images for the MapLibre engine.
 class MapIconHelper {
-  /// Captures a [materialIcon] and converts it into a [Uint8List] the map can render.
-  static Future<Uint8List> captureIcon(IconData materialIcon, Color color) async {
+  static Future<Uint8List> captureIcon(
+      IconData materialIcon, Color color) async {
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    
+
     textPainter.text = TextSpan(
       text: String.fromCharCode(materialIcon.codePoint),
       style: TextStyle(
@@ -28,20 +28,19 @@ class MapIconHelper {
         ],
       ),
     );
-    
+
     textPainter.layout();
     textPainter.paint(canvas, Offset.zero);
-    
+
     final picture = pictureRecorder.endRecording();
     final image = await picture.toImage(100, 100);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     if (bytes == null) {
-      return Uint8List(0); // Return empty rather than crashing
+      return Uint8List(0);
     }
     return bytes.buffer.asUint8List();
   }
 
-  /// Adds all standard navigation icons (Home, Work, Destination, User) to the map.
   static Future<void> addStandardIcons(MapLibreMapController controller) async {
     final icons = {
       "dest-pin": [Icons.location_on_rounded, Colors.redAccent],
@@ -52,13 +51,12 @@ class MapIconHelper {
 
     for (final entry in icons.entries) {
       try {
-        final bytes = await captureIcon(entry.value[0] as IconData, entry.value[1] as Color);
+        final bytes = await captureIcon(
+            entry.value[0] as IconData, entry.value[1] as Color);
         if (bytes.isNotEmpty) {
           await controller.addImage(entry.key, bytes);
         }
-      } catch (e) {
-        debugPrint('Icon ${entry.key} failed to add/capture: $e');
-      }
+      } catch (_) {}
     }
   }
 }

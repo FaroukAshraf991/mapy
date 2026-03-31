@@ -1,8 +1,8 @@
-# Mapy App: Latest Version Summary (v1.1.0+2)
+# Mapy App: Latest Version Summary (v1.5.0)
 
 ## 📍 Project Status Overview
 **Current Date**: March 24, 2026
-**Current Version**: `1.1.0+2` (Aetheric Glass Release)
+**Current Version**: `1.5.0` (Aetheric Glass Release)
 **Repository State**: Fully synced with `v1.5.0` tag (APK committed to `/releases`).
 
 ---

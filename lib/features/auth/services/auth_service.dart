@@ -1,14 +1,25 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Handles all Supabase authentication operations:
-/// register, login, and password reset.
+/// Handles all Supabase authentication operations.
 class AuthService {
   static final _supabase = Supabase.instance.client;
 
-  // ── Register ──────────────────────────────────────────────────────────────
+  static String? validatePassword(String password) {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!password.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one number';
+    }
+    if (!password.contains(RegExp(r'[!@#$%^&*]'))) {
+      return 'Password must contain at least one special character (!@#\$%^&*)';
+    }
+    return null;
+  }
 
-  /// Creates a new user account. Returns an error message on failure,
-  /// or null on success.
   static Future<String?> registerUser({
     required String name,
     required String email,
@@ -35,10 +46,6 @@ class AuthService {
     }
   }
 
-  // ── Login ─────────────────────────────────────────────────────────────────
-
-  /// Signs in an existing user.
-  /// Returns `{'success': true, 'name': '...'}` or `{'success': false, 'error': '...'}`.
   static Future<Map<String, dynamic>> loginUser({
     required String email,
     required String password,
@@ -55,16 +62,35 @@ class AuthService {
       }
       return {'success': false, 'error': 'Login failed.'};
     } on AuthException catch (e) {
-      return {'success': false, 'error': e.message};
+      String userFriendlyError = e.message;
+
+      if (e.message.contains('Invalid login credentials') ||
+          e.code == 'invalid_credentials') {
+        try {
+          final profileCheck = await _supabase
+              .from('profiles')
+              .select('id')
+              .eq('email', email)
+              .maybeSingle();
+
+          if (profileCheck != null) {
+            userFriendlyError = 'Incorrect password. Please try again.';
+          } else {
+            userFriendlyError =
+                'No account found with this email. Check for typos or register below.';
+          }
+        } catch (_) {}
+      } else if (e.message.contains('Email not confirmed')) {
+        userFriendlyError =
+            'Please verify your email address before logging in.';
+      }
+
+      return {'success': false, 'error': userFriendlyError};
     } catch (e) {
       return {'success': false, 'error': e.toString()};
     }
   }
 
-  // ── Password Reset ────────────────────────────────────────────────────────
-
-  /// Sends a password-reset email. Returns an error string on failure,
-  /// or null on success.
   static Future<String?> resetPassword(String email) async {
     try {
       await _supabase.auth.resetPasswordForEmail(email);
@@ -76,17 +102,10 @@ class AuthService {
     }
   }
 
-  // ── Sign Out ──────────────────────────────────────────────────────────────
-
-  /// Signs the current user out, clearing the persisted session.
   static Future<void> signOut() async {
     await _supabase.auth.signOut();
   }
 
-  // ── Profile Updates ───────────────────────────────────────────────────────
-
-  /// Updates the user's display name in Supabase Auth metadata.
-  /// Returns an error message on failure, or null on success.
   static Future<String?> updateName(String newName) async {
     try {
       await _supabase.auth.updateUser(
@@ -100,8 +119,6 @@ class AuthService {
     }
   }
 
-  /// Updates the user's email. Supabase will send a verification email
-  /// to the new address. Returns an error message on failure, or null on success.
   static Future<String?> updateEmail(String newEmail) async {
     try {
       await _supabase.auth.updateUser(
@@ -115,9 +132,6 @@ class AuthService {
     }
   }
 
-  /// Changes the user's password. Requires the current password for security.
-  /// Re-authenticates with the old password first, then updates.
-  /// Returns an error message on failure, or null on success.
   static Future<String?> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -126,13 +140,11 @@ class AuthService {
       final email = _supabase.auth.currentUser?.email;
       if (email == null) return 'No user is signed in.';
 
-      // Re-authenticate with current password
       await _supabase.auth.signInWithPassword(
         email: email,
         password: currentPassword,
       );
 
-      // Update to new password
       await _supabase.auth.updateUser(
         UserAttributes(password: newPassword),
       );
@@ -144,8 +156,6 @@ class AuthService {
     }
   }
 
-  /// Updates the user's date of birth in Supabase Auth metadata.
-  /// Typically used once for users who didn't set it during registration.
   static Future<String?> updateDOB(String dob) async {
     try {
       await _supabase.auth.updateUser(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mapy/core/constants/app_constants.dart';
+import 'package:mapy/core/utils/responsive.dart';
 
 class ProfileSectionCard extends StatelessWidget {
   final String title;
@@ -19,19 +20,18 @@ class ProfileSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.white;
+    final cardColor =
+        isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white;
     final borderColor = isDark
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.05);
     final textColor = isDark ? Colors.white : AppConstants.darkBackground;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.w(24)),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(context.r(24)),
         border: Border.all(color: borderColor, width: 1.5),
       ),
       child: Column(
@@ -39,22 +39,22 @@ class ProfileSectionCard extends StatelessWidget {
         children: [
           Row(children: [
             Container(
-              width: 40,
-              height: 40,
+              width: context.w(40),
+              height: context.h(40),
               decoration: BoxDecoration(
                 color: iconColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: iconColor, size: 20),
+              child: Icon(icon, color: iconColor, size: context.sp(20)),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: context.w(14)),
             Text(title,
                 style: TextStyle(
-                    fontSize: 18,
+                    fontSize: context.sp(18),
                     fontWeight: FontWeight.w700,
                     color: textColor)),
           ]),
-          const SizedBox(height: 20),
+          SizedBox(height: context.h(20)),
           ...children,
         ],
       ),
@@ -62,13 +62,14 @@ class ProfileSectionCard extends StatelessWidget {
   }
 }
 
-class ProfileTextField extends StatelessWidget {
+class ProfileTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
   final bool isDark;
   final bool isPassword;
   final TextInputType? keyboardType;
+  final bool showError;
 
   const ProfileTextField({
     super.key,
@@ -78,41 +79,79 @@ class ProfileTextField extends StatelessWidget {
     required this.isDark,
     this.isPassword = false,
     this.keyboardType,
+    this.showError = false,
   });
 
   @override
+  State<ProfileTextField> createState() => _ProfileTextFieldState();
+}
+
+class _ProfileTextFieldState extends State<ProfileTextField> {
+  bool _obscureText = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.isPassword;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final hintColor = isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black54;
-    final iconColor = isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black87;
-    final fillColor =
-        isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade50;
+    final textColor = widget.isDark ? Colors.white : Colors.black87;
+    final hintColor =
+        widget.isDark ? Colors.white.withValues(alpha: 0.5) : Colors.black54;
+    final iconColor =
+        widget.isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black87;
+    final fillColor = widget.isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.grey.shade50;
 
     return TextField(
-      controller: controller,
-      style: TextStyle(color: textColor),
-      obscureText: isPassword,
-      keyboardType: keyboardType,
+      controller: widget.controller,
+      style: TextStyle(color: textColor, fontSize: context.sp(15)),
+      obscureText: _obscureText,
+      keyboardType: widget.keyboardType,
       decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: hintColor),
-        prefixIcon: Icon(icon, color: iconColor),
+        hintText: widget.hint,
+        hintStyle: TextStyle(color: hintColor, fontSize: context.sp(15)),
+        prefixIcon: Icon(widget.icon, color: iconColor, size: context.sp(22)),
+        suffixIcon: widget.isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscureText ? Icons.visibility_off : Icons.visibility,
+                  color: iconColor,
+                  size: context.sp(22),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
+              )
+            : null,
         filled: true,
         fillColor: fillColor,
+        contentPadding: EdgeInsets.symmetric(
+            horizontal: context.w(16), vertical: context.h(16)),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(context.r(14)),
             borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(context.r(14)),
             borderSide: BorderSide(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.2)
-                    : Colors.grey.shade300,
-                width: 1)),
+                color: widget.showError
+                    ? Colors.red
+                    : (widget.isDark
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.grey.shade300),
+                width: widget.showError ? 2 : 1)),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(context.r(14)),
             borderSide: BorderSide(
-                color: isDark ? Colors.white : Colors.blueAccent, width: 2)),
+                color: widget.showError
+                    ? Colors.red
+                    : (widget.isDark ? Colors.white : Colors.blueAccent),
+                width: 2)),
       ),
     );
   }
@@ -150,21 +189,21 @@ class ProfileActionButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: EdgeInsets.symmetric(vertical: context.h(16)),
           elevation: 4,
           shadowColor: Colors.black26,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(context.r(14))),
         ),
         child: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
+            ? SizedBox(
+                width: context.w(20),
+                height: context.h(20),
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: Colors.white))
             : Text(label,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    fontSize: context.sp(16), fontWeight: FontWeight.bold)),
       ),
     );
   }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mapy/core/constants/app_constants.dart';
+import 'package:mapy/core/utils/location_permission_helper.dart';
+import 'package:mapy/core/utils/responsive.dart';
 
 class PickLocationScreen extends StatefulWidget {
   final String title;
@@ -14,7 +17,8 @@ class PickLocationScreen extends StatefulWidget {
 
 class _PickLocationScreenState extends State<PickLocationScreen> {
   final MapController _mapController = MapController();
-  LatLng _centerLocation = const LatLng(51.5, -0.09);
+  LatLng _centerLocation =
+      const LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
 
   @override
   void initState() {
@@ -26,29 +30,11 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
 
   Future<void> _relocateMe() async {
     try {
-      bool serviceEnabled;
-      LocationPermission permission;
-
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
+      final result = await LocationPermissionHelper.requestPermission();
+      if (!result.granted) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location services are disabled.')));
-        return;
-      }
-
-      permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are denied')));
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permissions are permanently denied.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.errorMessage ?? 'Location error')));
         return;
       }
 
@@ -61,7 +47,8 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
       _mapController.move(newLoc, 17.0);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Location Error: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Location Error: $e')));
     }
   }
 
@@ -86,48 +73,50 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.maps_app',
+                urlTemplate: AppConstants.osmTileUrl,
+                userAgentPackageName: AppConstants.osmTileUserAgent,
               ),
             ],
           ),
-          // Center static pin
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.only(bottom: 40.0), // Adjust to make the pin point at the center
+              padding: EdgeInsets.only(bottom: context.h(40)),
               child: Icon(
                 Icons.location_on,
-                size: 40,
+                size: context.sp(40),
                 color: Colors.red,
               ),
             ),
           ),
           Positioned(
-            bottom: 110,
-            right: 20,
+            bottom: context.h(110),
+            right: context.w(20),
             child: FloatingActionButton(
               heroTag: 'relocate_btn_pick',
               onPressed: _relocateMe,
               backgroundColor: Colors.white,
-              child: const Icon(Icons.my_location, color: Colors.green),
+              child: Icon(Icons.my_location,
+                  color: Colors.green, size: context.sp(24)),
             ),
           ),
           Positioned(
-            bottom: 30,
-            left: 20,
-            right: 20,
+            bottom: context.h(30),
+            left: context.w(20),
+            right: context.w(20),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: context.h(16)),
                 backgroundColor: Colors.blueAccent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(context.r(12)),
                 ),
               ),
               onPressed: () {
                 Navigator.of(context).pop(_centerLocation);
               },
-              child: const Text('Confirm Location', style: TextStyle(fontSize: 18, color: Colors.white)),
+              child: Text('Confirm Location',
+                  style:
+                      TextStyle(fontSize: context.sp(18), color: Colors.white)),
             ),
           )
         ],

@@ -1,53 +1,98 @@
-import { supabase } from "@/lib/supabase";
+"use client"
 
-export default async function DashboardPage() {
-  // Mock stats - in a real app, these would be fetched from Supabase
-  const stats = [
-    { label: "Total Users", value: "1,284", change: "+12%", color: "text-blue-500" },
-    { label: "Active Trips", value: "42", change: "+5%", color: "text-green-500" },
-    { label: "Avg. Distance", value: "12.4 km", change: "-2%", color: "text-orange-500" },
-  ];
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Users, Map, Activity, TrendingUp } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
 
+const stats = [
+  { title: "Total Users", value: "2,543", change: "+12.5%", icon: Users, color: "text-blue-600" },
+  { title: "Active Maps", value: "156", change: "+8.2%", icon: Map, color: "text-green-600" },
+  { title: "Total Sessions", value: "18,294", change: "+24.1%", icon: Activity, color: "text-purple-600" },
+  { title: "Growth Rate", value: "94.2%", change: "+3.4%", icon: TrendingUp, color: "text-orange-600" },
+]
+
+const chartData = [
+  { name: "Jan", users: 1200, sessions: 2400 },
+  { name: "Feb", users: 1900, sessions: 1398 },
+  { name: "Mar", users: 3000, sessions: 5800 },
+  { name: "Apr", users: 2780, sessions: 3908 },
+  { name: "May", users: 3490, sessions: 4800 },
+  { name: "Jun", users: 4200, sessions: 3800 },
+]
+
+const revenueData = [
+  { name: "Mon", revenue: 1000 },
+  { name: "Tue", revenue: 1200 },
+  { name: "Wed", revenue: 900 },
+  { name: "Thu", revenue: 1400 },
+  { name: "Fri", revenue: 1800 },
+  { name: "Sat", revenue: 1600 },
+  { name: "Sun", revenue: 1200 },
+]
+
+export default function DashboardPage() {
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
-        <p className="text-white/50 mt-1">Real-time metrics for your Mapy ecosystem.</p>
-      </header>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {stats.map((stat, i) => (
-          <div key={i} className="glass-card p-6 border border-white/10 hover:border-white/20 transition-all group">
-            <p className="text-sm font-medium text-white/50 group-hover:text-white/70 transition-colors">{stat.label}</p>
-            <div className="flex items-end gap-2 mt-2">
-              <span className="text-3xl font-bold">{stat.value}</span>
-              <span className={`text-xs font-bold mb-1 ${stat.change.startsWith("+") ? "text-green-500" : "text-red-500"}`}>
-                {stat.change}
-              </span>
-            </div>
-          </div>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.title} className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.change} from last month</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="glass-card p-8">
-        <h2 className="text-lg font-bold mb-6">Developer Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-[1.02] transition-all text-sm font-medium">
-            Reset All Caches
-          </button>
-          <button className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-[1.02] transition-all text-sm font-medium">
-            View System Logs
-          </button>
-          <button className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-[1.02] transition-all text-sm font-medium text-red-400 border-red-400/20">
-            Maintenance Mode
-          </button>
-          <button className="p-4 rounded-2xl bg-blue-600 hover:bg-blue-500 hover:scale-[1.02] transition-all text-sm font-bold">
-            Deploy Updates
-          </button>
-        </div>
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>User Growth</CardTitle>
+            <CardDescription>Monthly active users</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] sm:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+                  <XAxis dataKey="name" tick={{fontSize: 12}} />
+                  <YAxis tick={{fontSize: 12}} />
+                  <Tooltip />
+                  <Bar dataKey="users" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <CardTitle>Weekly Revenue</CardTitle>
+            <CardDescription>Daily revenue this week</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] sm:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200" />
+                  <XAxis dataKey="name" tick={{fontSize: 12}} />
+                  <YAxis tick={{fontSize: 12}} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
+  )
 }

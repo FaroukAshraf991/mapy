@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mapy/core/constants/app_constants.dart';
+import 'package:mapy/core/utils/responsive.dart';
 import 'package:mapy/models/place_result.dart';
 import 'package:mapy/services/geocoding_service.dart';
 import 'package:mapy/services/search_history_service.dart';
+import 'package:geolocator/geolocator.dart';
 
-/// Full-featured geocoding search screen with live results and search history.
-/// Returns the chosen [LatLng] via [Navigator.pop] when a place is selected.
 class NextWhereToScreen extends StatefulWidget {
   const NextWhereToScreen({super.key});
 
@@ -23,16 +24,32 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
   List<PlaceResult> _history = [];
   bool _isLoading = false;
   bool _hasSearched = false;
+  Position? _currentPosition;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _loadHistory();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.medium),
+      );
+      if (mounted) setState(() => _currentPosition = pos);
+    } catch (_) {
+      // Location fetch failed; search will proceed without bias
+    }
   }
 
   Future<void> _loadHistory() async {
-    final history = await SearchHistoryService.getHistory();
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return;
+    final history = await SearchHistoryService.getHistory(uid);
     if (!mounted) return;
     setState(() => _history = history);
   }
@@ -60,7 +77,11 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
 
     setState(() => _isLoading = true);
     _debounce = Timer(const Duration(milliseconds: 500), () async {
-      final results = await GeocodingService.searchPlaces(query);
+      final results = await GeocodingService.searchPlaces(
+        query,
+        biasLat: _currentPosition?.latitude,
+        biasLon: _currentPosition?.longitude,
+      );
       if (!mounted) return;
       setState(() {
         _results = results;
@@ -71,13 +92,19 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
   }
 
   Future<void> _selectPlace(PlaceResult place) async {
-    await SearchHistoryService.addToHistory(place);
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid != null) {
+      await SearchHistoryService.addToHistory(uid, place);
+    }
     if (!mounted) return;
     Navigator.of(context).pop(LatLng(place.lat, place.lon));
   }
 
   Future<void> _clearHistory() async {
-    await SearchHistoryService.clearHistory();
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid != null) {
+      await SearchHistoryService.clearHistory(uid);
+    }
     if (!mounted) return;
     setState(() => _history = []);
   }
@@ -102,11 +129,11 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          style: TextStyle(color: textColor, fontSize: 17),
+          style: TextStyle(color: textColor, fontSize: context.sp(17)),
           cursorColor: Colors.blueAccent,
           decoration: InputDecoration(
             hintText: 'Search for a place...',
-            hintStyle: TextStyle(color: hintColor),
+            hintStyle: TextStyle(color: hintColor, fontSize: context.sp(17)),
             border: InputBorder.none,
           ),
         ),
@@ -120,7 +147,9 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
       ),
       body: Column(
         children: [
-          Divider(height: 1, thickness: 1,
+          Divider(
+              height: 1,
+              thickness: 1,
               color: isDark ? Colors.white12 : Colors.black12),
           Expanded(
             child: _buildBody(
@@ -146,19 +175,19 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
           child: CircularProgressIndicator(color: Colors.blueAccent));
     }
 
-    // Show search results
     if (_hasSearched) {
       if (_results.isEmpty) {
         return Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.location_off_rounded, size: 64, color: hintColor),
-            const SizedBox(height: 16),
+            Icon(Icons.location_off_rounded,
+                size: context.sp(64), color: hintColor),
+            SizedBox(height: context.h(16)),
             Text('No places found.',
-                style: TextStyle(fontSize: 17, color: hintColor)),
-            const SizedBox(height: 8),
+                style: TextStyle(fontSize: context.sp(17), color: hintColor)),
+            SizedBox(height: context.h(8)),
             Text('Try a different search term.',
                 style: TextStyle(
-                    fontSize: 14,
+                    fontSize: context.sp(14),
                     color: hintColor.withValues(alpha: 0.7))),
           ]),
         );
@@ -166,21 +195,22 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
       return _buildResultsList(cardColor, textColor, hintColor);
     }
 
-    // Show history or empty state
-    if (_history.isNotEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildPoiCategories(isDark, hintColor),
+        if (_history.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+            padding: EdgeInsets.fromLTRB(
+                context.w(20), context.h(16), context.w(12), context.h(8)),
             child: Row(
               children: [
                 Icon(Icons.history_rounded,
-                    size: 18, color: hintColor),
-                const SizedBox(width: 8),
+                    size: context.sp(18), color: hintColor),
+                SizedBox(width: context.w(8)),
                 Text('Recent',
                     style: TextStyle(
-                        fontSize: 14,
+                        fontSize: context.sp(14),
                         fontWeight: FontWeight.w600,
                         color: hintColor)),
                 const Spacer(),
@@ -188,54 +218,139 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
                   onPressed: _clearHistory,
                   style: TextButton.styleFrom(
                       foregroundColor: Colors.redAccent,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4)),
-                  child: const Text('Clear',
-                      style: TextStyle(fontSize: 13)),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: context.w(12), vertical: context.h(4))),
+                  child:
+                      Text('Clear', style: TextStyle(fontSize: context.sp(13))),
                 ),
               ],
             ),
           ),
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.w(16), vertical: context.h(4)),
               itemCount: _history.length,
               separatorBuilder: (context, index) =>
-                  const SizedBox(height: 6),
-              itemBuilder: (context, index) =>
-                  _placeCard(_history[index], cardColor, textColor,
-                      hintColor, isHistory: true),
+                  SizedBox(height: context.h(6)),
+              itemBuilder: (context, index) => _placeCard(
+                  _history[index], cardColor, textColor, hintColor,
+                  isHistory: true),
+            ),
+          ),
+        ] else ...[
+          Expanded(
+            child: Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.search_rounded,
+                    size: context.sp(72), color: hintColor),
+                SizedBox(height: context.h(16)),
+                Text('Where do you want to go?',
+                    style: TextStyle(
+                        fontSize: context.sp(18),
+                        color: hintColor,
+                        fontWeight: FontWeight.w500)),
+                SizedBox(height: context.h(8)),
+                Text('Search for a place or select\na category above',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: context.sp(14),
+                        color: hintColor.withValues(alpha: 0.7))),
+              ]),
             ),
           ),
         ],
-      );
-    }
-
-    return Center(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.search_rounded, size: 72, color: hintColor),
-        const SizedBox(height: 16),
-        Text('Where do you want to go?',
-            style: TextStyle(
-                fontSize: 18,
-                color: hintColor,
-                fontWeight: FontWeight.w500)),
-        const SizedBox(height: 8),
-        Text('Type an address, city, or landmark.',
-            style: TextStyle(
-                fontSize: 14,
-                color: hintColor.withValues(alpha: 0.7))),
-      ]),
+      ],
     );
   }
 
-  Widget _buildResultsList(
-      Color cardColor, Color textColor, Color hintColor) {
+  Widget _buildPoiCategories(bool isDark, Color hintColor) {
+    final poiCategories = [
+      {
+        'icon': Icons.restaurant_rounded,
+        'label': 'Restaurant',
+        'query': 'restaurant'
+      },
+      {
+        'icon': Icons.local_gas_station_rounded,
+        'label': 'Gas Station',
+        'query': 'gas station'
+      },
+      {
+        'icon': Icons.local_parking_rounded,
+        'label': 'Parking',
+        'query': 'parking'
+      },
+      {'icon': Icons.hotel_rounded, 'label': 'Hotel', 'query': 'hotel'},
+      {
+        'icon': Icons.shopping_bag_rounded,
+        'label': 'Shopping',
+        'query': 'shopping mall'
+      },
+      {
+        'icon': Icons.local_hospital_rounded,
+        'label': 'Hospital',
+        'query': 'hospital'
+      },
+    ];
+
+    return SizedBox(
+      height: context.h(115),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(
+            horizontal: context.w(16), vertical: context.h(12)),
+        itemCount: poiCategories.length,
+        separatorBuilder: (_, __) => SizedBox(width: context.w(12)),
+        itemBuilder: (context, index) {
+          final category = poiCategories[index];
+          return GestureDetector(
+            onTap: () {
+              _searchController.text = category['query'] as String;
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(context.w(14)),
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.blueAccent.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Icon(
+                    category['icon'] as IconData,
+                    color: Colors.blueAccent,
+                    size: context.sp(24),
+                  ),
+                ),
+                SizedBox(height: context.h(6)),
+                Text(
+                  category['label'] as String,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: context.sp(11),
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildResultsList(Color cardColor, Color textColor, Color hintColor) {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: EdgeInsets.symmetric(
+          vertical: context.h(12), horizontal: context.w(16)),
       itemCount: _results.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      separatorBuilder: (context, index) => SizedBox(height: context.h(8)),
       itemBuilder: (context, index) =>
           _placeCard(_results[index], cardColor, textColor, hintColor),
     );
@@ -250,29 +365,29 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
   }) {
     return Material(
       color: cardColor,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(context.r(16)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(context.r(16)),
         onTap: () => _selectPlace(place),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: EdgeInsets.symmetric(
+              horizontal: context.w(16), vertical: context.h(14)),
           child: Row(children: [
             Container(
-              width: 44, height: 44,
+              width: context.w(44),
+              height: context.h(44),
               decoration: BoxDecoration(
                 color: (isHistory ? Colors.grey : Colors.redAccent)
                     .withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isHistory
-                    ? Icons.history_rounded
-                    : Icons.location_pin,
+                isHistory ? Icons.history_rounded : Icons.location_pin,
                 color: isHistory ? Colors.grey : Colors.redAccent,
-                size: 22,
+                size: context.sp(22),
               ),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: context.w(14)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,24 +396,24 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                          fontSize: 15,
+                          fontSize: context.sp(15),
                           fontWeight: FontWeight.w600,
                           color: textColor)),
                   if (place.address.isNotEmpty) ...[
-                    const SizedBox(height: 3),
+                    SizedBox(height: context.h(3)),
                     Text(place.address,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            fontSize: 13,
+                            fontSize: context.sp(13),
                             color: textColor.withValues(alpha: 0.55))),
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: context.w(8)),
             Icon(Icons.arrow_forward_ios_rounded,
-                size: 14, color: textColor.withValues(alpha: 0.3)),
+                size: context.sp(14), color: textColor.withValues(alpha: 0.3)),
           ]),
         ),
       ),

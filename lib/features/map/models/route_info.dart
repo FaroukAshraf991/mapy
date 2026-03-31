@@ -48,6 +48,18 @@ class RouteInfo {
   }
 }
 
+class RouteAlternative {
+  final int id;
+  final String name;
+  final RouteInfo routeInfo;
+
+  const RouteAlternative({
+    required this.id,
+    required this.name,
+    required this.routeInfo,
+  });
+}
+
 /// Represents a single maneuver in a route (e.g., "Turn left onto High St").
 class RouteStep {
   final String instruction;
@@ -68,7 +80,7 @@ class RouteStep {
   IconData get icon {
     if (maneuverType == 'arrive') return Icons.location_on_rounded;
     if (maneuverType == 'depart') return Icons.my_location_rounded;
-    
+
     switch (modifier) {
       case 'left':
       case 'slight left':
