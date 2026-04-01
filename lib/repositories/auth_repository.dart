@@ -1,13 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/network/api_response.dart';
-
 /// Repository for authentication operations
 class AuthRepository {
   final SupabaseClient _client;
-
+  /// Check whether Supabase has been initialized.
+  static bool get isInitialized {
+    try {
+      // Accessing [Supabase.instance] throws if [initialize] was never called.
+      Supabase.instance;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
   AuthRepository({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
-
   /// Validate password complexity
   String? validatePassword(String password) {
     if (password.length < 8) {
@@ -24,7 +31,6 @@ class AuthRepository {
     }
     return null;
   }
-
   /// Register a new user
   Future<ApiResponse<String>> register({
     required String name,
@@ -37,13 +43,11 @@ class AuthRepository {
       if (dateOfBirth != null) {
         metadata['date_of_birth'] = dateOfBirth;
       }
-
       final response = await _client.auth.signUp(
         email: email,
         password: password,
         data: metadata,
       );
-
       if (response.user != null) {
         return ApiResponse.success('Registration successful');
       }
@@ -54,7 +58,6 @@ class AuthRepository {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Login user with email and password
   Future<ApiResponse<Map<String, dynamic>>> login({
     required String email,
@@ -65,7 +68,6 @@ class AuthRepository {
         email: email,
         password: password,
       );
-
       if (response.user != null) {
         final name =
             response.user!.userMetadata?['full_name'] as String? ?? 'User';
@@ -74,7 +76,6 @@ class AuthRepository {
       return ApiResponse.error('Login failed.');
     } on AuthException catch (e) {
       String userFriendlyError = e.message;
-
       if (e.message.contains('Invalid login credentials') ||
           e.code == 'invalid_credentials') {
         try {
@@ -83,7 +84,6 @@ class AuthRepository {
               .select('id')
               .eq('email', email)
               .maybeSingle();
-
           if (profileCheck != null) {
             userFriendlyError = 'Incorrect password. Please try again.';
           } else {
@@ -95,13 +95,11 @@ class AuthRepository {
         userFriendlyError =
             'Please verify your email address before logging in.';
       }
-
       return ApiResponse.error(userFriendlyError);
     } catch (e) {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Send password reset email
   Future<ApiResponse<String>> resetPassword(String email) async {
     try {
@@ -113,7 +111,6 @@ class AuthRepository {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Sign out the current user
   Future<ApiResponse<void>> signOut() async {
     try {
@@ -123,7 +120,6 @@ class AuthRepository {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Update user's name
   Future<ApiResponse<String>> updateName(String newName) async {
     try {
@@ -137,7 +133,6 @@ class AuthRepository {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Update user's email
   Future<ApiResponse<String>> updateEmail(String newEmail) async {
     try {
@@ -151,7 +146,6 @@ class AuthRepository {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Change user's password
   Future<ApiResponse<void>> changePassword({
     required String currentPassword,
@@ -162,18 +156,15 @@ class AuthRepository {
       if (email == null) {
         return ApiResponse.error('No user is signed in.');
       }
-
       // Verify current password
       await _client.auth.signInWithPassword(
         email: email,
         password: currentPassword,
       );
-
       // Update to new password
       await _client.auth.updateUser(
         UserAttributes(password: newPassword),
       );
-
       return ApiResponse.success(null);
     } on AuthException catch (e) {
       return ApiResponse.error(e.message);
@@ -181,7 +172,6 @@ class AuthRepository {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Update user's date of birth
   Future<ApiResponse<String>> updateDOB(String dob) async {
     try {
@@ -195,16 +185,12 @@ class AuthRepository {
       return ApiResponse.error(e.toString());
     }
   }
-
   /// Get current user
   User? get currentUser => _client.auth.currentUser;
-
   /// Get current session
   Session? get currentSession => _client.auth.currentSession;
-
   /// Check if user is authenticated
   bool get isAuthenticated => _client.auth.currentSession != null;
-
   /// Listen to auth state changes
   Stream<AuthState> get onAuthStateChange => _client.auth.onAuthStateChange;
 }

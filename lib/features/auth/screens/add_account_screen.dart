@@ -9,29 +9,24 @@ import 'package:mapy/features/auth/services/auth_service.dart';
 import 'package:mapy/features/auth/widgets/auth_text_field.dart';
 import 'package:mapy/features/auth/widgets/floating_message.dart';
 import 'package:mapy/services/account_storage_service.dart';
-
 /// Sign-in screen for adding a second (or different) account.
 /// Does NOT log out the current account before the user taps "Sign In".
 /// When sign-in succeeds, the new session takes over and we navigate to /map.
 class AddAccountScreen extends StatefulWidget {
   const AddAccountScreen({super.key});
-
   @override
   State<AddAccountScreen> createState() => _AddAccountScreenState();
 }
-
 class _AddAccountScreenState extends State<AddAccountScreen>
     with SingleTickerProviderStateMixin, FadeSlideAnimation {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-
   @override
   void initState() {
     super.initState();
     initFadeSlideAnimation();
   }
-
   @override
   void dispose() {
     disposeFadeSlideAnimation();
@@ -39,26 +34,20 @@ class _AddAccountScreenState extends State<AddAccountScreen>
     _passwordController.dispose();
     super.dispose();
   }
-
   Future<void> _signIn() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-
     if (email.isEmpty || password.isEmpty) {
       _showError('Please fill in both fields.');
       return;
     }
-
     setState(() => _isLoading = true);
-
     // AuthService.loginUser signs in without touching AuthCubit state first
     // — this means the current account is NOT logged out until Supabase
     // replaces the session on successful sign-in.
     final result = await AuthService.loginUser(email: email, password: password);
-
     if (!mounted) return;
     setState(() => _isLoading = false);
-
     if (result['success'] == true) {
       // Persist the new account so it shows up in the account switcher.
       await AccountStorageService.saveCurrentAccount();
@@ -69,15 +58,12 @@ class _AddAccountScreenState extends State<AddAccountScreen>
           'Sign in failed. Please check your credentials.');
     }
   }
-
   void _showError(String msg) => FloatingMessage.showError(context, msg);
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor =
         isDark ? AppConstants.darkBackground : AppConstants.lightBackground;
-
     return Scaffold(
       backgroundColor: bgColor,
       body: SafeArea(
@@ -102,7 +88,6 @@ class _AddAccountScreenState extends State<AddAccountScreen>
                 ],
               ),
             ),
-
             // ── Main card ─────────────────────────────────────────────────
             Expanded(
               child: Center(
@@ -161,9 +146,7 @@ class _AddAccountScreenState extends State<AddAccountScreen>
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
-
                                 SizedBox(height: context.h(40)),
-
                                 // Email field
                                 AuthTextField(
                                   controller: _emailController,
@@ -173,7 +156,6 @@ class _AddAccountScreenState extends State<AddAccountScreen>
                                   isDark: isDark,
                                 ),
                                 SizedBox(height: context.h(20)),
-
                                 // Password field
                                 AuthTextField(
                                   controller: _passwordController,
@@ -182,9 +164,7 @@ class _AddAccountScreenState extends State<AddAccountScreen>
                                   isPassword: true,
                                   isDark: isDark,
                                 ),
-
                                 SizedBox(height: context.h(36)),
-
                                 // Sign In button
                                 ElevatedButton(
                                   onPressed: _isLoading ? null : _signIn,
@@ -221,9 +201,7 @@ class _AddAccountScreenState extends State<AddAccountScreen>
                                           ),
                                         ),
                                 ),
-
                                 SizedBox(height: context.h(16)),
-
                                 // Cancel
                                 TextButton(
                                   onPressed: () => context.pop(),

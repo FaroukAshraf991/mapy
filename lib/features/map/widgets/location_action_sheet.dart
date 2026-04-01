@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/core/utils/responsive.dart';
 import 'package:mapy/services/location_share_service.dart';
-
 /// Bottom sheet showing actions for a saved Home or Work location.
 ///
 /// Provides options to navigate to, change, or clear the location.
@@ -13,7 +12,6 @@ class LocationActionSheet extends StatelessWidget {
   final VoidCallback onNavigate;
   final VoidCallback onChange;
   final VoidCallback onClear;
-
   const LocationActionSheet({
     super.key,
     required this.type,
@@ -23,7 +21,6 @@ class LocationActionSheet extends StatelessWidget {
     required this.onChange,
     required this.onClear,
   });
-
   static void show({
     required BuildContext context,
     required String type,
@@ -35,7 +32,6 @@ class LocationActionSheet extends StatelessWidget {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppConstants.darkBackground : Colors.white;
-
     showModalBottomSheet(
       context: context,
       backgroundColor: bgColor,
@@ -53,14 +49,11 @@ class LocationActionSheet extends StatelessWidget {
       ),
     );
   }
-
   bool get _isHome => type == 'home';
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : AppConstants.darkBackground;
-
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: context.h(16)),
@@ -122,7 +115,6 @@ class LocationActionSheet extends StatelessWidget {
       ),
     );
   }
-
   Widget _buildHandle(BuildContext context, bool isDark) {
     return Container(
       width: context.w(40),
@@ -134,7 +126,6 @@ class LocationActionSheet extends StatelessWidget {
       ),
     );
   }
-
   Widget _buildHeader(BuildContext context, Color textColor) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: context.w(24)),
@@ -156,7 +147,6 @@ class LocationActionSheet extends StatelessWidget {
       ]),
     );
   }
-
   Widget _buildCoords(BuildContext context, Color textColor) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: context.w(24)),
@@ -170,14 +160,12 @@ class LocationActionSheet extends StatelessWidget {
     );
   }
 }
-
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String label;
   final Color textColor;
   final VoidCallback onTap;
-
   const _ActionTile({
     required this.icon,
     required this.iconColor,
@@ -185,7 +173,6 @@ class _ActionTile extends StatelessWidget {
     required this.textColor,
     required this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     return ListTile(

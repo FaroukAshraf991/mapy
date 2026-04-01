@@ -34,16 +34,21 @@ class AuthState {
 }
 
 class AuthCubit extends Cubit<AuthState> {
-  final AuthRepository _authRepository;
+  final AuthRepository? _authRepository;
   StreamSubscription<supa.AuthState>? _authSubscription;
 
   AuthCubit({AuthRepository? authRepository})
-      : _authRepository = authRepository ?? AuthRepository(),
+      : _authRepository = authRepository ??
+            (AuthRepository.isInitialized ? AuthRepository() : null),
         super(const AuthState()) {
     _init();
   }
 
   void _init() {
+    // If Supabase was not initialized, stay unauthenticated — the user will
+    // see the login screen and can retry from there.
+    if (_authRepository == null) return;
+
     // Check existing session
     final session = _authRepository.currentSession;
     if (session != null) {
@@ -78,6 +83,14 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
   }) async {
+    if (_authRepository == null) {
+      emit(const AuthState(
+        status: AuthStatus.unauthenticated,
+        error: 'Service unavailable. Please try again later.',
+      ));
+      return;
+    }
+
     emit(state.copyWith(status: AuthStatus.loading));
 
     final result = await _authRepository.login(
@@ -105,6 +118,14 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
     String? dateOfBirth,
   }) async {
+    if (_authRepository == null) {
+      emit(const AuthState(
+        status: AuthStatus.unauthenticated,
+        error: 'Service unavailable. Please try again later.',
+      ));
+      return;
+    }
+
     emit(state.copyWith(status: AuthStatus.loading));
 
     final result = await _authRepository.register(
@@ -126,20 +147,20 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// Logout
   Future<void> logout() async {
-    await _authRepository.signOut();
+    await _authRepository?.signOut();
     emit(const AuthState(status: AuthStatus.unauthenticated));
   }
 
   /// Reset password
   Future<String?> resetPassword(String email) async {
-    final result = await _authRepository.resetPassword(email);
-    return result.error;
+    final result = await _authRepository?.resetPassword(email);
+    return result?.error;
   }
 
   /// Update name
   Future<void> updateName(String newName) async {
-    final result = await _authRepository.updateName(newName);
-    if (result.success) {
+    final result = await _authRepository?.updateName(newName);
+    if (result?.success == true) {
       emit(state.copyWith(userName: newName));
     }
   }

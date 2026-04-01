@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:mapy/core/utils/responsive.dart';
@@ -83,8 +82,6 @@ class TopSearchOverlay extends StatelessWidget {
             onCustomPinLongPress: onCustomPinLongPress,
             onAddTap: onAddTap,
           ),
-          SizedBox(height: context.h(8)),
-          _buildGpsDisplay(context),
         ],
       ),
     );
@@ -106,64 +103,6 @@ class TopSearchOverlay extends StatelessWidget {
                 blurRadius: context.w(10),
                 offset: Offset(0, context.h(2))),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGpsDisplay(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(context.r(16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: context.w(12),
-            offset: Offset(0, context.h(4)),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(context.r(16)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.w(14),
-              vertical: context.h(10),
-            ),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.white.withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(context.r(16)),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.15)
-                    : Colors.white.withValues(alpha: 0.4),
-                width: 1.5,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.gps_fixed_rounded,
-                  size: context.sp(16),
-                  color: Colors.blueAccent,
-                ),
-                SizedBox(width: context.w(8)),
-                Text(
-                  'Tap map to select location',
-                  style: TextStyle(
-                    fontSize: context.sp(12),
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

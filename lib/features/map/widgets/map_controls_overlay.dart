@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/core/utils/responsive.dart';
-
 class MapControlsOverlay extends StatelessWidget {
   final bool isDark;
   final bool isNavigating;
@@ -19,7 +18,6 @@ class MapControlsOverlay extends StatelessWidget {
   final bool showOnlyLayers;
   final double? currentLat;
   final double? currentLng;
-
   const MapControlsOverlay({
     super.key,
     required this.isDark,
@@ -38,7 +36,6 @@ class MapControlsOverlay extends StatelessWidget {
     this.currentLat,
     this.currentLng,
   });
-
   static Widget buildLayersButton({
     required bool isDark,
     required VoidCallback onLayers,
@@ -56,11 +53,9 @@ class MapControlsOverlay extends StatelessWidget {
       },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     final bgColor = isDark ? AppConstants.modalBackground : Colors.white;
-
     if (showOnlyLayers) {
       return _button(
         context: context,
@@ -70,7 +65,6 @@ class MapControlsOverlay extends StatelessWidget {
         bgColor: bgColor,
       );
     }
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -176,7 +170,6 @@ class MapControlsOverlay extends StatelessWidget {
       ],
     );
   }
-
   static Widget _button({
     required BuildContext context,
     required IconData icon,

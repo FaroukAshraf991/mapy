@@ -6,24 +6,19 @@ import 'package:share_plus/share_plus.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/core/utils/responsive.dart';
 import 'package:mapy/services/trip_history_service.dart';
-
 class TripHistoryScreen extends StatefulWidget {
   const TripHistoryScreen({super.key});
-
   @override
   State<TripHistoryScreen> createState() => _TripHistoryScreenState();
 }
-
 class _TripHistoryScreenState extends State<TripHistoryScreen> {
   List<TripRecord> _trips = [];
   bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
     _loadTrips();
   }
-
   Future<void> _loadTrips() async {
     final trips = await TripHistoryService.getTripHistory();
     setState(() {
@@ -31,35 +26,28 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       _isLoading = false;
     });
   }
-
   Future<void> _clearHistory() async {
     await TripHistoryService.clearTripHistory();
     setState(() => _trips = []);
   }
-
   Future<void> _exportGpx(TripRecord trip) async {
     final points = trip.waypoints.isNotEmpty
         ? trip.waypoints.map((w) => ll.LatLng(w['lat']!, w['lng']!)).toList()
         : [trip.destination];
-
     final gpx = TripHistoryService.generateGpx(points, trip.destinationName);
-
     final dir = await getTemporaryDirectory();
     final file =
         File('${dir.path}/${trip.destinationName.replaceAll(' ', '_')}.gpx');
     await file.writeAsString(gpx);
-
     await SharePlus.instance.share(ShareParams(
       files: [XFile(file.path)],
       text: 'Trip to ${trip.destinationName}',
     ));
   }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppConstants.darkBackground : Colors.white;
-
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
@@ -84,7 +72,6 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
               : _buildTripList(isDark),
     );
   }
-
   Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Column(
@@ -107,7 +94,6 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       ),
     );
   }
-
   Widget _buildTripList(bool isDark) {
     return ListView.builder(
       padding: EdgeInsets.all(context.w(16)),
@@ -118,7 +104,6 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       },
     );
   }
-
   Widget _buildTripCard(TripRecord trip, bool isDark) {
     return Container(
       margin: EdgeInsets.only(bottom: context.h(12)),
@@ -188,11 +173,9 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       ),
     );
   }
-
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-
     if (diff.inDays == 0) {
       return 'Today';
     } else if (diff.inDays == 1) {
@@ -203,7 +186,6 @@ class _TripHistoryScreenState extends State<TripHistoryScreen> {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
-
   void _showClearDialog(bool isDark) {
     showDialog(
       context: context,

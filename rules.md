@@ -25,3 +25,14 @@ This document defines the absolute "Ground Truth" for the Mapy application. Thes
 ## 📦 Versioning & Repository
 1. **Formal Releases**: Every major architectural change must be tagged and pushed as a formal GitHub Release (e.g., v1.3.x).
 2. **APK Distribution**: Attach a production-ready `app-release.apk` to every formal release.
+
+---
+
+## 🏗️ Flutter Code Architecture & Cleanliness Guidelines
+
+1. **Strict File Size Limits**: No `.dart` file should exceed 150-200 lines. If a file is approaching this limit, you must refactor and split the logic or UI into smaller, modular files.
+2. **Widget Extraction**: Do not write massive, deeply nested widget trees. Break down complex screens into smaller, reusable, independent widgets. Place these extracted widgets in a dedicated `widgets/` directory.
+3. **Single Responsibility Principle (SRP)**: Each class, function, and file must have exactly one reason to change.
+4. **Separation of Concerns**: Strictly separate the UI layer from business logic and state management. Do not put API calls, complex data parsing, or database queries directly inside UI widgets.
+5. **Clean Architecture**: Structure the project logically (e.g., feature-first architecture). Keep screens, reusable widgets, models, and controllers cleanly separated in their respective directories.
+6. **Readability & Naming**: Prioritize readable code over clever or compact code. Use highly descriptive names for variables, methods, and classes.

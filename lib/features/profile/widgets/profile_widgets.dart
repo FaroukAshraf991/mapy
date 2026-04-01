@@ -8,15 +8,13 @@ class ProfileSectionCard extends StatelessWidget {
   final Color iconColor;
   final List<Widget> children;
   final bool isDark;
-
-  const ProfileSectionCard({
-    super.key,
-    required this.title,
-    required this.icon,
-    required this.iconColor,
-    required this.children,
-    required this.isDark,
-  });
+  const ProfileSectionCard(
+      {super.key,
+      required this.title,
+      required this.icon,
+      required this.iconColor,
+      required this.children,
+      required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -26,38 +24,31 @@ class ProfileSectionCard extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.05);
     final textColor = isDark ? Colors.white : AppConstants.darkBackground;
-
     return Container(
       padding: EdgeInsets.all(context.w(24)),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(context.r(24)),
-        border: Border.all(color: borderColor, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(children: [
-            Container(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(context.r(24)),
+          border: Border.all(color: borderColor, width: 1.5)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          Container(
               width: context.w(40),
               height: context.h(40),
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: iconColor, size: context.sp(20)),
-            ),
-            SizedBox(width: context.w(14)),
-            Text(title,
-                style: TextStyle(
-                    fontSize: context.sp(18),
-                    fontWeight: FontWeight.w700,
-                    color: textColor)),
-          ]),
-          SizedBox(height: context.h(20)),
-          ...children,
-        ],
-      ),
+                  color: iconColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: context.sp(20))),
+          SizedBox(width: context.w(14)),
+          Text(title,
+              style: TextStyle(
+                  fontSize: context.sp(18),
+                  fontWeight: FontWeight.w700,
+                  color: textColor)),
+        ]),
+        SizedBox(height: context.h(20)),
+        ...children,
+      ]),
     );
   }
 }
@@ -66,21 +57,17 @@ class ProfileTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
-  final bool isDark;
-  final bool isPassword;
+  final bool isDark, isPassword, showError;
   final TextInputType? keyboardType;
-  final bool showError;
-
-  const ProfileTextField({
-    super.key,
-    required this.controller,
-    required this.hint,
-    required this.icon,
-    required this.isDark,
-    this.isPassword = false,
-    this.keyboardType,
-    this.showError = false,
-  });
+  const ProfileTextField(
+      {super.key,
+      required this.controller,
+      required this.hint,
+      required this.icon,
+      required this.isDark,
+      this.isPassword = false,
+      this.keyboardType,
+      this.showError = false});
 
   @override
   State<ProfileTextField> createState() => _ProfileTextFieldState();
@@ -105,7 +92,6 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
     final fillColor = widget.isDark
         ? Colors.white.withValues(alpha: 0.08)
         : Colors.grey.shade50;
-
     return TextField(
       controller: widget.controller,
       style: TextStyle(color: textColor, fontSize: context.sp(15)),
@@ -118,16 +104,10 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
-                  _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: iconColor,
-                  size: context.sp(22),
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
-                },
-              )
+                    _obscureText ? Icons.visibility_off : Icons.visibility,
+                    color: iconColor,
+                    size: context.sp(22)),
+                onPressed: () => setState(() => _obscureText = !_obscureText))
             : null,
         filled: true,
         fillColor: fillColor,
@@ -159,19 +139,15 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
 
 class ProfileActionButton extends StatelessWidget {
   final String label;
-  final bool isLoading;
+  final bool isLoading, isDark, isDestructive;
   final VoidCallback onPressed;
-  final bool isDark;
-  final bool isDestructive;
-
-  const ProfileActionButton({
-    super.key,
-    required this.label,
-    required this.isLoading,
-    required this.onPressed,
-    required this.isDark,
-    this.isDestructive = false,
-  });
+  const ProfileActionButton(
+      {super.key,
+      required this.label,
+      required this.isLoading,
+      required this.onPressed,
+      required this.isDark,
+      this.isDestructive = false});
 
   @override
   Widget build(BuildContext context) {
@@ -181,20 +157,18 @@ class ProfileActionButton extends StatelessWidget {
     final fg = isDestructive
         ? Colors.white
         : (isDark ? AppConstants.darkBackground : Colors.white);
-
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: fg,
-          padding: EdgeInsets.symmetric(vertical: context.h(16)),
-          elevation: 4,
-          shadowColor: Colors.black26,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(context.r(14))),
-        ),
+            backgroundColor: bg,
+            foregroundColor: fg,
+            padding: EdgeInsets.symmetric(vertical: context.h(16)),
+            elevation: 4,
+            shadowColor: Colors.black26,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(context.r(14)))),
         child: isLoading
             ? SizedBox(
                 width: context.w(20),

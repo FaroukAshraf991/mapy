@@ -3,7 +3,7 @@ import 'package:mapy/core/utils/responsive.dart';
 import 'package:mapy/features/map/models/map_enums.dart';
 import 'package:mapy/features/map/models/route_info.dart';
 import 'package:mapy/features/map/widgets/map_controls_overlay.dart';
-import 'package:mapy/features/map/widgets/navigation_overlay.dart';
+import 'package:mapy/features/map/widgets/route_info_panel.dart';
 
 /// Bottom overlay containing map controls, trip bar, and route info panel.
 class BottomMapControls extends StatelessWidget {
