@@ -15,7 +15,7 @@ class MapBuilder {
     required BuildContext context,
     required MapCubit mapCubit,
     required MapState state,
-    required VoidCallback onMapCreated,
+    required void Function(MapLibreMapController) onMapCreated,
     required VoidCallback onStyleLoaded,
     required VoidCallback onCameraIdle,
     required void Function(dynamic, LatLng) onMapClick,
@@ -29,7 +29,7 @@ class MapBuilder {
           zoom: AppConstants.defaultZoom,
         ),
         styleString: mapCubit.getMapStyleString(isDark),
-        onMapCreated: (_) => onMapCreated(),
+        onMapCreated: (controller) => onMapCreated(controller),
         onStyleLoadedCallback: onStyleLoaded,
         trackCameraPosition: true,
         myLocationEnabled: true,
@@ -89,6 +89,7 @@ class MapBuilder {
     required MapCubit mapCubit,
     required VoidCallback onRelocate,
     required VoidCallback onTogglePerspective,
+    required VoidCallback onLayers,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -102,7 +103,7 @@ class MapBuilder {
         hasRoute: state.routeInfo.hasRoute,
         bearing: state.bearing,
         onRelocate: onRelocate,
-        onLayers: () {},
+        onLayers: onLayers,
         onTogglePerspective: onTogglePerspective,
         onResetBearing: () {
           if (mapCubit.mapController != null) {

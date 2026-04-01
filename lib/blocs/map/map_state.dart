@@ -24,6 +24,8 @@ class MapState {
   final double distance;
   final double currentSpeed;
   final bool showTraffic;
+  final bool showTransit;
+  final bool showBiking;
 
   const MapState({
     this.currentStyle = MapStyle.street,
@@ -45,6 +47,8 @@ class MapState {
     this.distance = 0.0,
     this.currentSpeed = 0.0,
     this.showTraffic = false,
+    this.showTransit = false,
+    this.showBiking = false,
   });
 
   MapState copyWith({
@@ -67,6 +71,8 @@ class MapState {
     double? distance,
     double? currentSpeed,
     bool? showTraffic,
+    bool? showTransit,
+    bool? showBiking,
   }) {
     return MapState(
       currentStyle: currentStyle ?? this.currentStyle,
@@ -89,6 +95,8 @@ class MapState {
       distance: distance ?? this.distance,
       currentSpeed: currentSpeed ?? this.currentSpeed,
       showTraffic: showTraffic ?? this.showTraffic,
+      showTransit: showTransit ?? this.showTransit,
+      showBiking: showBiking ?? this.showBiking,
     );
   }
 }

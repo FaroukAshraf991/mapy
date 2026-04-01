@@ -2,7 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/core/utils/responsive.dart';
-class MapControlsOverlay extends StatelessWidget {
+
+class MapControlsOverlay extends StatefulWidget {
   final bool isDark;
   final bool isNavigating;
   final bool is3dMode;
@@ -18,6 +19,7 @@ class MapControlsOverlay extends StatelessWidget {
   final bool showOnlyLayers;
   final double? currentLat;
   final double? currentLng;
+
   const MapControlsOverlay({
     super.key,
     required this.isDark,
@@ -36,6 +38,7 @@ class MapControlsOverlay extends StatelessWidget {
     this.currentLat,
     this.currentLng,
   });
+
   static Widget buildLayersButton({
     required bool isDark,
     required VoidCallback onLayers,
@@ -43,8 +46,7 @@ class MapControlsOverlay extends StatelessWidget {
     return Builder(
       builder: (context) {
         final bgColor = isDark ? AppConstants.modalBackground : Colors.white;
-        return _button(
-          context: context,
+        return _AnimatedMapButton(
           icon: Icons.layers_rounded,
           onTap: onLayers,
           color: Colors.blueAccent,
@@ -53,14 +55,19 @@ class MapControlsOverlay extends StatelessWidget {
       },
     );
   }
+
+  @override
+  State<MapControlsOverlay> createState() => _MapControlsOverlayState();
+}
+
+class _MapControlsOverlayState extends State<MapControlsOverlay> {
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDark ? AppConstants.modalBackground : Colors.white;
-    if (showOnlyLayers) {
-      return _button(
-        context: context,
+    final bgColor = widget.isDark ? AppConstants.modalBackground : Colors.white;
+    if (widget.showOnlyLayers) {
+      return _AnimatedMapButton(
         icon: Icons.layers_rounded,
-        onTap: onLayers,
+        onTap: widget.onLayers,
         color: Colors.blueAccent,
         bgColor: bgColor,
       );
@@ -68,11 +75,11 @@ class MapControlsOverlay extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (bearing.abs() >= 0.1)
+        if (widget.bearing.abs() >= 0.1)
           GestureDetector(
-            onTap: onResetBearing,
+            onTap: widget.onResetBearing,
             child: Transform.rotate(
-              angle: -bearing * (3.14159 / 180),
+              angle: -widget.bearing * (3.14159 / 180),
               child: Container(
                 width: context.w(48),
                 height: context.w(48),
@@ -129,84 +136,135 @@ class MapControlsOverlay extends StatelessWidget {
             ),
           ),
         SizedBox(height: context.h(12)),
-        _button(
-          context: context,
-          icon: isNavigating
+        _AnimatedMapButton(
+          icon: widget.isNavigating
               ? Icons.navigation_rounded
               : Icons.my_location_rounded,
-          onTap: onRelocate,
-          color: isNavigating
+          onTap: widget.onRelocate,
+          color: widget.isNavigating
               ? Colors.blueAccent
-              : (isDark ? Colors.white : Colors.black87),
+              : (widget.isDark ? Colors.white : Colors.black87),
           bgColor: bgColor,
         ),
-        if (showLayersButton) ...[
+        if (widget.showLayersButton) ...[
           SizedBox(height: context.h(12)),
-          _button(
-            context: context,
+          _AnimatedMapButton(
             icon: Icons.layers_rounded,
-            onTap: onLayers,
+            onTap: widget.onLayers,
             color: Colors.blueAccent,
             bgColor: bgColor,
           ),
         ],
         SizedBox(height: context.h(12)),
-        _button(
-          context: context,
-          icon: is3dMode ? Icons.apartment_rounded : Icons.map_rounded,
-          onTap: onTogglePerspective,
+        _AnimatedMapButton(
+          icon: widget.is3dMode ? Icons.apartment_rounded : Icons.map_rounded,
+          onTap: widget.onTogglePerspective,
           color: Colors.orangeAccent,
           bgColor: bgColor,
         ),
         SizedBox(height: context.h(12)),
-        if (!hasRoute)
-          _button(
-            context: context,
+        if (!widget.hasRoute)
+          _AnimatedMapButton(
             icon: Icons.share_location_rounded,
-            onTap: onShareLocation ?? () {},
+            onTap: widget.onShareLocation ?? () {},
             color: Colors.green,
             bgColor: bgColor,
           ),
       ],
     );
   }
-  static Widget _button({
-    required BuildContext context,
-    required IconData icon,
-    required VoidCallback onTap,
-    required Color color,
-    required Color bgColor,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: context.w(12),
-            offset: Offset(0, context.h(4)),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
-                width: 1.5,
+}
+
+class _AnimatedMapButton extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+  final Color bgColor;
+
+  const _AnimatedMapButton({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+    required this.bgColor,
+  });
+
+  @override
+  State<_AnimatedMapButton> createState() => _AnimatedMapButtonState();
+}
+
+class _AnimatedMapButtonState extends State<_AnimatedMapButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    widget.onTap();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: context.w(12),
+                offset: Offset(0, context.h(4)),
               ),
-            ),
-            child: Material(
-              color: bgColor.withValues(alpha: 0.85),
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(context.r(30)),
-                child: Padding(
-                  padding: EdgeInsets.all(context.w(14)),
-                  child: Icon(icon, color: color, size: context.sp(24)),
+            ],
+          ),
+          child: ClipOval(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                ),
+                child: Container(
+                  color: widget.bgColor.withValues(alpha: 0.85),
+                  child: Padding(
+                    padding: EdgeInsets.all(context.w(14)),
+                    child: Icon(widget.icon,
+                        color: widget.color, size: context.sp(24)),
+                  ),
                 ),
               ),
             ),

@@ -81,7 +81,19 @@ class MapCubit extends Cubit<MapState> with MapCubitNavigationMixin {
         return satelliteStyleJson;
       case MapStyle.street:
         return isDark ? AppConstants.darkStyleUrl : AppConstants.osmStyleUrl;
+      case MapStyle.terrain:
+        return isDark ? AppConstants.darkStyleUrl : AppConstants.osmStyleUrl;
     }
+  }
+
+  void toggleTransit() {
+    emit(state.copyWith(showTransit: !state.showTransit));
+    updateLayers(force: true);
+  }
+
+  void toggleBiking() {
+    emit(state.copyWith(showBiking: !state.showBiking));
+    updateLayers(force: true);
   }
 
   void updateCurrentLocation(LatLng loc) =>

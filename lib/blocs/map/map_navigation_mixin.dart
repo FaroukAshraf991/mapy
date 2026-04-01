@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:geolocator/geolocator.dart';
 import '../../features/map/models/map_enums.dart';
 import '../../features/map/models/route_info.dart';
 import '../../services/notification_service.dart';
 import '../../services/voice_navigation_service.dart';
+import '../../services/geocoding_service.dart';
 import '../../core/constants/app_constants.dart';
 import 'map_state.dart';
 
@@ -25,23 +27,88 @@ mixin MapCubitNavigationMixin {
 
   Future<void> navigateTo(LatLng loc) async {
     if (state.currentLocation == null || mapController == null) return;
+
     emit(state.copyWith(destinationLocation: loc, isRouting: true));
-    await updateLayers(force: true);
-    final bounds = LatLngBounds(
-      southwest: LatLng(
-        math.min(state.currentLocation!.latitude, loc.latitude),
-        math.min(state.currentLocation!.longitude, loc.longitude),
-      ),
-      northeast: LatLng(
-        math.max(state.currentLocation!.latitude, loc.latitude),
-        math.max(state.currentLocation!.longitude, loc.longitude),
-      ),
-    );
-    mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds,
-          left: 80, top: 80, right: 80, bottom: 80),
-    );
-    emit(state.copyWith(isRouting: false));
+
+    try {
+      final origin = state.currentLocation!;
+      final originLl = ll.LatLng(origin.latitude, origin.longitude);
+      final destLl = ll.LatLng(loc.latitude, loc.longitude);
+
+      final alternatives = await GeocodingService.getRouteAlternatives(
+        originLl,
+        destLl,
+        mode: state.travelMode,
+      );
+
+      if (alternatives.isNotEmpty) {
+        emit(state.copyWith(
+          routeInfo: alternatives.first.routeInfo,
+          routeAlternatives: alternatives,
+          selectedAlternativeIndex: 0,
+          isRouting: false,
+          isFetchingRoute: false,
+        ));
+        currentStepIndex = 0;
+        distanceToNextStep = 0.0;
+
+        // Calculate bounds from route points
+        final points = alternatives.first.routeInfo.points;
+        double minLat = points.first.latitude;
+        double maxLat = points.first.latitude;
+        double minLon = points.first.longitude;
+        double maxLon = points.first.longitude;
+
+        for (final point in points) {
+          minLat = math.min(minLat, point.latitude);
+          maxLat = math.max(maxLat, point.latitude);
+          minLon = math.min(minLon, point.longitude);
+          maxLon = math.max(maxLon, point.longitude);
+        }
+
+        final bounds = LatLngBounds(
+          southwest: LatLng(minLat, minLon),
+          northeast: LatLng(maxLat, maxLon),
+        );
+
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(bounds,
+              left: 80, top: 80, right: 80, bottom: 80),
+        );
+      } else {
+        // No route found - fall back to direct view
+        emit(state.copyWith(
+          routeInfo: RouteInfo.empty,
+          routeAlternatives: [],
+          isRouting: false,
+          isFetchingRoute: false,
+        ));
+
+        final bounds = LatLngBounds(
+          southwest: LatLng(
+            math.min(origin.latitude, loc.latitude),
+            math.min(origin.longitude, loc.longitude),
+          ),
+          northeast: LatLng(
+            math.max(origin.latitude, loc.latitude),
+            math.max(origin.longitude, loc.longitude),
+          ),
+        );
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(bounds,
+              left: 80, top: 80, right: 80, bottom: 80),
+        );
+      }
+
+      await updateLayers(force: true);
+    } catch (e) {
+      emit(state.copyWith(
+        routeInfo: RouteInfo.empty,
+        routeAlternatives: [],
+        isRouting: false,
+        isFetchingRoute: false,
+      ));
+    }
   }
 
   void selectRouteAlternative(int index) {

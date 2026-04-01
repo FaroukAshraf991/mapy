@@ -14,6 +14,7 @@ import 'package:mapy/blocs/map/map_cubit.dart';
 import 'package:mapy/blocs/map/map_state.dart';
 import 'package:mapy/features/map/utils/map_actions_helper.dart';
 import 'package:mapy/features/map/widgets/map_builder.dart';
+import 'package:mapy/features/map/widgets/layers_overlay.dart';
 
 class MainMapScreen extends StatefulWidget {
   final String userName;
@@ -111,6 +112,34 @@ class _MainMapScreenState extends State<MainMapScreen> {
     ).then((_) => setState(() {}));
   }
 
+  void _showLayersOverlay(BuildContext context, MapState state) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    LayersOverlay.show(
+      context: context,
+      currentStyle: state.currentStyle,
+      isDark: isDark,
+      showTraffic: state.showTraffic,
+      showTransit: state.showTransit,
+      showBiking: state.showBiking,
+      onStyleSelected: (style) {
+        _mapCubit.setMapStyle(style);
+        setState(() {});
+      },
+      onTrafficToggle: (value) {
+        _mapCubit.toggleTraffic();
+        setState(() {});
+      },
+      onTransitToggle: (value) {
+        _mapCubit.toggleTransit();
+        setState(() {});
+      },
+      onBikingToggle: (value) {
+        _mapCubit.toggleBiking();
+        setState(() {});
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -124,8 +153,10 @@ class _MainMapScreenState extends State<MainMapScreen> {
                   context: context,
                   mapCubit: _mapCubit,
                   state: state,
-                  onMapCreated: () =>
-                      _actions.onMapCreated(_mapCubit.mapController!),
+                  onMapCreated: (controller) {
+                    _mapCubit.setMapController(controller);
+                    _actions.onMapCreated(controller);
+                  },
                   onStyleLoaded: _actions.onStyleLoaded,
                   onCameraIdle: _actions.onCameraIdle,
                   onMapClick: (point, latlng) =>
@@ -155,6 +186,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                   mapCubit: _mapCubit,
                   onRelocate: _actions.relocateMe,
                   onTogglePerspective: _actions.toggleMapPerspective,
+                  onLayers: () => _showLayersOverlay(context, state),
                 ),
                 MapBuilder.buildNavigationGuidance(
                   context: context,
