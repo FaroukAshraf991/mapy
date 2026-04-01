@@ -370,6 +370,7 @@ class MapCubit extends Cubit<MapState> {
         distanceFilter: state.isNavigating ? 2 : 5,
       ),
     ).listen((Position position) {
+      if (isClosed) return;
       final newLoc = LatLng(position.latitude, position.longitude);
       final speedKmH = position.speed * 3.6;
       emit(state.copyWith(currentLocation: newLoc, currentSpeed: speedKmH));
@@ -382,9 +383,11 @@ class MapCubit extends Cubit<MapState> {
 
     compassSubscription?.cancel();
     compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
+      if (isClosed) return;
       if (state.isNavigating && event.heading != null) {
         // Ignore magnetic compass if driving/riding and moving fast (GPS track angle is better for roads)
-        bool isVehicle = state.travelMode == TravelMode.driving || state.travelMode == TravelMode.motorcycle;
+        bool isVehicle = state.travelMode == TravelMode.driving ||
+            state.travelMode == TravelMode.motorcycle;
         if (isVehicle && state.currentSpeed > 4.0) return;
 
         double newHeading = event.heading!;
@@ -403,16 +406,17 @@ class MapCubit extends Cubit<MapState> {
 
   void _updateNavigationPerspective(Position position) {
     if (mapController == null || state.currentLocation == null) return;
-    
+
     // GPS track angle exactly binds to the road/movement path!
     // We use it if driving a vehicle over ~4km/h, or if compass wasn't ready.
-    bool isVehicle = state.travelMode == TravelMode.driving || state.travelMode == TravelMode.motorcycle;
+    bool isVehicle = state.travelMode == TravelMode.driving ||
+        state.travelMode == TravelMode.motorcycle;
     if ((isVehicle && state.currentSpeed > 4.0) || navigationRotation == 0.0) {
       if (position.heading >= 0.0) {
         navigationRotation = position.heading;
       }
     }
-    
+
     _updateCameraFromCurrentState();
     updateLayers();
   }

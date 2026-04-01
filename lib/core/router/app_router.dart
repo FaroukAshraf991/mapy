@@ -6,6 +6,7 @@ import 'app_routes.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/update_password_screen.dart';
+import '../../features/auth/screens/add_account_screen.dart';
 import '../../features/map/screens/main_map_screen.dart';
 import '../../features/map/screens/next_where_to_screen.dart';
 import '../../features/map/screens/pick_location_screen.dart';
@@ -93,6 +94,14 @@ GoRouter createRouter(AuthCubit authCubit) {
         path: AppRoutes.settings,
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+
+      // Add account — accessible while already authenticated.
+      // Intentionally NOT in isAuthRoute so GoRouter won't redirect away.
+      GoRoute(
+        path: AppRoutes.addAccount,
+        name: 'add-account',
+        builder: (context, state) => const AddAccountScreen(),
       ),
     ],
   );

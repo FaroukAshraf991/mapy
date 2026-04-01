@@ -35,12 +35,22 @@ class MainMapScreen extends StatefulWidget {
 
 class _MainMapScreenState extends State<MainMapScreen> {
   late final MapCubit _mapCubit;
+  String _currentUserName = '';
 
   @override
   void initState() {
     super.initState();
+    _currentUserName = widget.userName;
     _mapCubit = MapCubit();
     _initialize();
+  }
+
+  @override
+  void didUpdateWidget(MainMapScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userName != widget.userName) {
+      _currentUserName = widget.userName;
+    }
   }
 
   Future<void> _initialize() async {

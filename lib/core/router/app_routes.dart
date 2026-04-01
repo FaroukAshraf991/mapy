@@ -13,4 +13,7 @@ abstract class AppRoutes {
   // Settings routes
   static const String settings = '/settings';
   static const String profile = '/profile';
+
+  // Add account (accessible while authenticated — not in auth redirect list)
+  static const String addAccount = '/add-account';
 }
