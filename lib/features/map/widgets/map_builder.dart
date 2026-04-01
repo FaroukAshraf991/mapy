@@ -94,8 +94,8 @@ class MapBuilder {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Positioned(
-      top: MediaQuery.of(context).padding.top + context.h(240),
-      right: context.w(20),
+      top: MediaQuery.of(context).padding.top + context.h(180),
+      right: context.w(16),
       child: MapControlsOverlay(
         isDark: isDark,
         isNavigating: state.isNavigating,
