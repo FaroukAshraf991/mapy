@@ -58,6 +58,7 @@ class MapBuilder {
     required Function(Map<String, dynamic>) onCustomPinTap,
     required Function(Map<String, dynamic>) onCustomPinLongPress,
     required VoidCallback onAddTap,
+    required VoidCallback onSwapEndpoints,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -67,6 +68,8 @@ class MapBuilder {
       isDark: isDark,
       isRouting: state.isRouting,
       showTopUI: !state.routeInfo.hasRoute,
+      destinationName: state.destinationName,
+      originName: state.originName,
       searchHistory: state.searchHistory,
       homeLocation: state.homeLocation,
       workLocation: state.workLocation,
@@ -80,6 +83,7 @@ class MapBuilder {
       onCustomPinTap: onCustomPinTap,
       onCustomPinLongPress: onCustomPinLongPress,
       onAddTap: onAddTap,
+      onSwapEndpoints: onSwapEndpoints,
     );
   }
 
@@ -155,6 +159,7 @@ class MapBuilder {
     required Function(TravelMode) onModeSelect,
     required VoidCallback onShowAlternatives,
     required VoidCallback onShareLocation,
+    required VoidCallback onPreview,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -171,9 +176,11 @@ class MapBuilder {
         hasRoute: state.routeInfo.hasRoute,
         isNavigating: state.isNavigating,
         isDark: isDark,
+        isSwapped: state.isRouteSwapped,
         onTap: onWhereToTapped,
         onStartNavigation: onStartNavigation,
         onExitNavigation: onStartNavigation,
+        onPreview: onPreview,
       ),
       onRelocate: onRelocate,
       onLayers: () {},

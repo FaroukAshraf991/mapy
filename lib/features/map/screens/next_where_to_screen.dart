@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/core/utils/responsive.dart';
@@ -88,7 +87,11 @@ class _NextWhereToScreenState extends State<NextWhereToScreen> {
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid != null) await SearchHistoryService.addToHistory(uid, place);
     if (!mounted) return;
-    Navigator.of(context).pop(LatLng(place.lat, place.lon));
+    Navigator.of(context).pop(<String, dynamic>{
+      'lat': place.lat,
+      'lon': place.lon,
+      'name': place.shortName,
+    });
   }
 
   Future<void> _clearHistory() async {

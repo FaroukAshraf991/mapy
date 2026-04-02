@@ -8,6 +8,11 @@ class MapState {
   final MapStyle currentStyle;
   final LatLng? currentLocation;
   final LatLng? destinationLocation;
+  final String? destinationName;
+  final String? originName;
+  final LatLng? startLocation;
+  final String? startName;
+  final bool isRouteSwapped;
   final ll.LatLng? homeLocation;
   final ll.LatLng? workLocation;
   final List<PlaceResult> searchHistory;
@@ -31,6 +36,11 @@ class MapState {
     this.currentStyle = MapStyle.street,
     this.currentLocation,
     this.destinationLocation,
+    this.destinationName,
+    this.originName,
+    this.startLocation,
+    this.startName,
+    this.isRouteSwapped = false,
     this.homeLocation,
     this.workLocation,
     this.searchHistory = const [],
@@ -55,6 +65,11 @@ class MapState {
     MapStyle? currentStyle,
     LatLng? currentLocation,
     LatLng? destinationLocation,
+    Object? destinationName = _sentinel,
+    Object? originName = _sentinel,
+    Object? startLocation = _sentinel,
+    Object? startName = _sentinel,
+    bool? isRouteSwapped,
     ll.LatLng? homeLocation,
     ll.LatLng? workLocation,
     List<PlaceResult>? searchHistory,
@@ -78,6 +93,19 @@ class MapState {
       currentStyle: currentStyle ?? this.currentStyle,
       currentLocation: currentLocation ?? this.currentLocation,
       destinationLocation: destinationLocation ?? this.destinationLocation,
+      destinationName: identical(destinationName, _sentinel)
+          ? this.destinationName
+          : destinationName as String?,
+      originName: identical(originName, _sentinel)
+          ? this.originName
+          : originName as String?,
+      startLocation: identical(startLocation, _sentinel)
+          ? this.startLocation
+          : startLocation as LatLng?,
+      startName: identical(startName, _sentinel)
+          ? this.startName
+          : startName as String?,
+      isRouteSwapped: isRouteSwapped ?? this.isRouteSwapped,
       homeLocation: homeLocation ?? this.homeLocation,
       workLocation: workLocation ?? this.workLocation,
       searchHistory: searchHistory ?? this.searchHistory,
@@ -100,3 +128,5 @@ class MapState {
     );
   }
 }
+
+const Object _sentinel = Object();

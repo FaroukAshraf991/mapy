@@ -15,6 +15,7 @@ import 'package:mapy/blocs/map/map_state.dart';
 import 'package:mapy/features/map/utils/map_actions_helper.dart';
 import 'package:mapy/features/map/widgets/map_builder.dart';
 import 'package:mapy/features/map/widgets/layers_overlay.dart';
+import 'package:mapy/features/map/screens/route_preview_screen.dart';
 
 class MainMapScreen extends StatefulWidget {
   final String userName;
@@ -179,6 +180,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     },
                     onCustomPinLongPress: _actions.deleteCustomPin,
                     onAddTap: _actions.addCustomPin,
+                    onSwapEndpoints: _actions.swapEndpoints,
                   ),
                 MapBuilder.buildTopLayersButton(
                   context: context,
@@ -211,6 +213,23 @@ class _MainMapScreenState extends State<MainMapScreen> {
                         latitude: currentLocation.latitude,
                         longitude: currentLocation.longitude,
                         placeName: 'My Current Location',
+                      );
+                    }
+                  },
+                  onPreview: () {
+                    final routeInfo = _mapCubit.state.routeInfo;
+                    if (routeInfo.hasRoute && routeInfo.steps.isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RoutePreviewScreen(
+                            routeInfo: routeInfo,
+                            originName:
+                                _mapCubit.state.originName ?? 'Your location',
+                            destinationName: _mapCubit.state.destinationName ??
+                                'Destination',
+                          ),
+                        ),
                       );
                     }
                   },

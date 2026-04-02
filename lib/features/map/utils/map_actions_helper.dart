@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:latlong2/latlong.dart' as ll;
@@ -9,6 +10,7 @@ import 'package:mapy/features/map/models/map_enums.dart';
 import 'package:mapy/features/map/utils/map_icon_helper.dart';
 import 'package:mapy/features/map/widgets/route_alternatives_sheet.dart';
 import 'package:mapy/blocs/map/map_cubit.dart';
+
 class MapActionsHelper {
   final MapCubit mapCubit;
   final BuildContext context;
@@ -26,10 +28,12 @@ class MapActionsHelper {
     mapCubit.setMapController(controller);
     relocateMe();
   }
+
   Future<void> onStyleLoaded() async {
     await MapIconHelper.addStandardIcons(mapCubit.mapController!);
     await mapCubit.updateLayers(force: true);
   }
+
   void onCameraIdle() {
     if (isMounted() && mapCubit.mapController != null) {
       mapCubit.mapController!.getVisibleRegion();
@@ -37,12 +41,28 @@ class MapActionsHelper {
           mapCubit.mapController!.cameraPosition?.bearing ?? 0.0);
     }
   }
+
   void onMapClick(dynamic point, LatLng latlng) {
     if (!mapCubit.state.isNavigating) {
+      debugPrint('🔄 Map tapped - setting destination name to Dropped pin');
+      mapCubit.setOriginName('Your location');
+      mapCubit.setStartName('Your location');
+      mapCubit.setDestinationName('Dropped pin');
+
+      // Set start location to current GPS location
+      final currentLoc = mapCubit.state.currentLocation;
+      if (currentLoc != null) {
+        mapCubit.emit(mapCubit.state.copyWith(startLocation: currentLoc));
+      }
+
+      debugPrint('🔄 Navigating to tapped location...');
       mapCubit.navigateTo(latlng);
+      debugPrint('🔄 Calling onStateChanged...');
       onStateChanged();
+      debugPrint('🔄 onMapClick done');
     }
   }
+
   Future<void> relocateMe() async {
     final result = await LocationPermissionHelper.requestPermission();
     if (!result.granted) {
@@ -65,16 +85,29 @@ class MapActionsHelper {
       showSnackBar('Location Error: $e');
     }
   }
+
   Future<void> onWhereToTapped() async {
-    final picked = await Navigator.of(context).push<ll.LatLng>(
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(builder: (_) => const NextWhereToScreen()),
     );
-    if (picked == null || !isMounted()) return;
+    if (result == null || !isMounted()) return;
     await mapCubit.loadHistory();
-    final loc = LatLng(picked.latitude, picked.longitude);
+    final loc = LatLng(result['lat'] as double, result['lon'] as double);
+
+    // Set start location to current GPS
+    final currentLoc = mapCubit.state.currentLocation;
+    if (currentLoc != null) {
+      mapCubit.emit(mapCubit.state.copyWith(startLocation: currentLoc));
+    }
+
+    mapCubit.setOriginName('Your location');
+    mapCubit.setStartName('Your location');
+    mapCubit.setDestinationName(result['name'] as String?);
+
     await mapCubit.navigateTo(loc);
     onStateChanged();
   }
+
   Future<void> toggleNavigation() async {
     await mapCubit.toggleNavigation();
     if (mapCubit.state.isNavigating && mapCubit.state.currentLocation != null) {
@@ -82,17 +115,28 @@ class MapActionsHelper {
     }
     onStateChanged();
   }
+
   void clearRoute() {
     mapCubit.clearRoute();
     onStateChanged();
   }
+
+  void swapEndpoints() {
+    debugPrint('🔄 swapEndpoints called!');
+    mapCubit.swapRoute();
+    onStateChanged();
+    debugPrint('🔄 swapEndpoints done!');
+  }
+
   void setTravelMode(TravelMode mode) {
     mapCubit.setTravelMode(mode);
   }
+
   void toggleMapPerspective() {
     mapCubit.toggleMapPerspective();
     onStateChanged();
   }
+
   Future<void> openPicker(String type) async {
     final picked = await Navigator.of(context).push<ll.LatLng>(
       MaterialPageRoute(
@@ -113,6 +157,7 @@ class MapActionsHelper {
       onStateChanged();
     }
   }
+
   Future<void> addCustomPin() async {
     final nameController = TextEditingController();
     final label = await showDialog<String>(
@@ -147,6 +192,7 @@ class MapActionsHelper {
     onStateChanged();
     showSnackBar('Pin "$label" saved!');
   }
+
   Future<void> deleteCustomPin(Map<String, dynamic> pin) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -168,12 +214,14 @@ class MapActionsHelper {
     if (!isMounted()) return;
     onStateChanged();
   }
+
   void shareCurrentLocation() {
     final currentLocation = mapCubit.state.currentLocation;
     if (currentLocation != null) {
       onStateChanged();
     }
   }
+
   void showRouteAlternatives() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(

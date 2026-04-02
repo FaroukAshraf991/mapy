@@ -66,9 +66,17 @@ class _LayersOverlayState extends State<LayersOverlay>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
+  late bool _showTraffic;
+  late bool _showTransit;
+  late bool _showBiking;
+
   @override
   void initState() {
     super.initState();
+    _showTraffic = widget.showTraffic;
+    _showTransit = widget.showTransit;
+    _showBiking = widget.showBiking;
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
@@ -265,11 +273,14 @@ class _LayersOverlayState extends State<LayersOverlay>
         children: [
           _buildToggleTile(
             icon: Icons.traffic_rounded,
-            iconColor: widget.showTraffic ? Colors.green : Colors.grey,
+            iconColor: _showTraffic ? Colors.green : Colors.grey,
             label: 'Traffic',
             subtitle: 'Real-time traffic conditions',
-            value: widget.showTraffic,
-            onChanged: widget.onTrafficToggle,
+            value: _showTraffic,
+            onChanged: (value) {
+              setState(() => _showTraffic = value);
+              widget.onTrafficToggle(value);
+            },
             tileBg: tileBg,
             textColor: textColor,
             subtitleColor: subtitleColor,
@@ -277,11 +288,14 @@ class _LayersOverlayState extends State<LayersOverlay>
           SizedBox(height: context.h(12)),
           _buildToggleTile(
             icon: Icons.directions_transit_rounded,
-            iconColor: widget.showTransit ? Colors.purple : Colors.grey,
+            iconColor: _showTransit ? Colors.purple : Colors.grey,
             label: 'Transit',
             subtitle: 'Public transport routes',
-            value: widget.showTransit,
-            onChanged: widget.onTransitToggle,
+            value: _showTransit,
+            onChanged: (value) {
+              setState(() => _showTransit = value);
+              widget.onTransitToggle(value);
+            },
             tileBg: tileBg,
             textColor: textColor,
             subtitleColor: subtitleColor,
@@ -289,11 +303,14 @@ class _LayersOverlayState extends State<LayersOverlay>
           SizedBox(height: context.h(12)),
           _buildToggleTile(
             icon: Icons.directions_bike_rounded,
-            iconColor: widget.showBiking ? Colors.blue : Colors.grey,
+            iconColor: _showBiking ? Colors.blue : Colors.grey,
             label: 'Biking',
             subtitle: 'Bike lanes and paths',
-            value: widget.showBiking,
-            onChanged: widget.onBikingToggle,
+            value: _showBiking,
+            onChanged: (value) {
+              setState(() => _showBiking = value);
+              widget.onBikingToggle(value);
+            },
             tileBg: tileBg,
             textColor: textColor,
             subtitleColor: subtitleColor,

@@ -1198,3 +1198,81 @@ All components now have:
 **Build Status:** ✅ flutter analyze - No issues found
 
 **Last Updated:** 2026-03-29
+
+---
+
+## Conversation 24: Directions Input Card (Route Endpoints Header)
+
+**User:** Shared a screenshot of the Google Maps directions input card UI (showing "Your location" and a destination name with a swap button) and asked to add it to the app, following rules.md.
+
+**Me:** Read rules.md, explored codebase, created implementation plan, received approval, and executed.
+
+**Feature Added:**
+A Google Maps-style directions header card appears at the top of the map screen when a route is active, replacing the standard search bar overlay. It shows:
+- Top row: 🔵 blue origin dot + "Your location" + `···` overflow icon
+- Three-dot vertical connector between rows
+- Horizontal divider
+- Bottom row: 📍 destination name (truncated) + ↕ swap button (clears route on tap)
+
+**Files Created:**
+- `lib/features/map/widgets/route_directions_header.dart` — Self-contained, responsive widget (~183 lines, well within the 200-line limit)
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `lib/blocs/map/map_state.dart` | Added `destinationName` nullable field + sentinel pattern in `copyWith` |
+| `lib/blocs/map/map_navigation_mixin.dart` | `clearRoute()` now also resets `destinationName` |
+| `lib/blocs/map/map_cubit.dart` | Added `setDestinationName(String?)` method |
+| `lib/features/map/screens/next_where_to_screen.dart` | Pops `Map<String, dynamic>{lat, lon, name}` instead of bare `LatLng`; removed unused `latlong2` import |
+| `lib/features/map/utils/map_actions_helper.dart` | `onWhereToTapped` extracts `name` from result map, calls `setDestinationName` |
+| `lib/features/map/widgets/top_search_overlay.dart` | Shows `RouteDirectionsHeader` when route active; added `destinationName` + `onSwapEndpoints` props |
+| `lib/features/map/widgets/map_builder.dart` | `buildTopOverlay` forwards `destinationName` + `onSwapEndpoints` |
+| `lib/features/map/screens/main_map_screen.dart` | Passes `onSwapEndpoints: _actions.clearRoute` to `buildTopOverlay` |
+
+**Rules Verification:**
+1. ✅ Strict Obedience — Only implemented the UI shown in the image
+2. ✅ No Unsolicited Additions — No extra features beyond what was shown/approved
+3. ✅ Clean Architecture — New widget separated into `widgets/` directory, SRP maintained
+4. ✅ Zero Error Policy — `dart analyze` on all changed files: 4 pre-existing info warnings only, zero errors in modified files
+5. ✅ Clean Code — Meaningful names, small single-purpose methods, self-documenting code
+6. ✅ Development Architecture — Feature-first structure followed, Cubit pattern maintained
+7. ✅ Post-Task Rule Verification — Verified all rules explicitly before finishing
+8. ✅ Command Documentation — This entry in ZenConversation.md
+9. ✅ Responsive UI — All sizes/padding via `context.w()`, `context.h()`, `context.sp()`, `context.r()`, zero hardcoded pixels
+10. ✅ Hardcoding — All strings ('Your location', etc.) hardcoded directly in widget code
+
+**Build Status:** ✅ dart analyze on all changed files — No errors
+
+**Last Updated:** 2026-04-02
+
+---
+
+## Conversation 25: Bug Fixes — Directions Header (Map Tap & Swap Button)
+
+**User:** Reported two bugs:
+1. Tapping on the map did not show the directions header at the pre-driving screen.
+2. The swap (↕) button on the directions header did nothing.
+
+**Root Causes Found:**
+
+**Bug 1** — `onMapClick` in `map_actions_helper.dart` called `navigateTo()` but never called `setDestinationName()`. The `_buildDirectionsHeader` guard `if (name == null) return SizedBox.shrink()` therefore always hid the card for map taps (only search-screen selections set a name).
+
+**Bug 2** — Both `_buildSwapButton` and `_buildMoreButton` used `GestureDetector` with default `HitTestBehavior.deferToChild`, which only registers taps on the exact painted pixels of the child `Icon`. Flutter's `Icon` doesn't fill the full touch target, causing reliable miss events. Replaced with `IconButton` which enforces a proper 48×48 touch target.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `lib/features/map/utils/map_actions_helper.dart` | `onMapClick` now calls `setDestinationName('Dropped pin')` before `navigateTo` |
+| `lib/features/map/widgets/route_directions_header.dart` | `_buildMoreButton` and `_buildSwapButton` replaced `GestureDetector+Icon` with `IconButton` |
+
+**Rules Verification:**
+1. ✅ Strict Obedience — Fixed only the two reported bugs
+2. ✅ Zero Error Policy — `dart analyze` on changed files: 0 errors (1 pre-existing info)
+3. ✅ Clean Code — Minimal targeted fixes
+4. ✅ Command Documentation — This entry in ZenConversation.md
+
+**Build Status:** ✅ dart analyze — No errors
+
+**Last Updated:** 2026-04-02

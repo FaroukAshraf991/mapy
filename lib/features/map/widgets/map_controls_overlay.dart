@@ -46,10 +46,8 @@ class MapControlsOverlay extends StatefulWidget {
     return Builder(
       builder: (context) {
         final bgColor = isDark ? AppConstants.modalBackground : Colors.white;
-        return _AnimatedMapButton(
-          icon: Icons.layers_rounded,
+        return _LayersButton(
           onTap: onLayers,
-          color: Colors.blueAccent,
           bgColor: bgColor,
         );
       },
@@ -65,10 +63,8 @@ class _MapControlsOverlayState extends State<MapControlsOverlay> {
   Widget build(BuildContext context) {
     final bgColor = widget.isDark ? AppConstants.modalBackground : Colors.white;
     if (widget.showOnlyLayers) {
-      return _AnimatedMapButton(
-        icon: Icons.layers_rounded,
+      return _LayersButton(
         onTap: widget.onLayers,
-        color: Colors.blueAccent,
         bgColor: bgColor,
       );
     }
@@ -148,10 +144,8 @@ class _MapControlsOverlayState extends State<MapControlsOverlay> {
         ),
         if (widget.showLayersButton) ...[
           SizedBox(height: context.h(12)),
-          _AnimatedMapButton(
-            icon: Icons.layers_rounded,
+          _LayersButton(
             onTap: widget.onLayers,
-            color: Colors.blueAccent,
             bgColor: bgColor,
           ),
         ],
@@ -162,14 +156,6 @@ class _MapControlsOverlayState extends State<MapControlsOverlay> {
           color: Colors.orangeAccent,
           bgColor: bgColor,
         ),
-        SizedBox(height: context.h(12)),
-        if (!widget.hasRoute)
-          _AnimatedMapButton(
-            icon: Icons.share_location_rounded,
-            onTap: widget.onShareLocation ?? () {},
-            color: Colors.green,
-            bgColor: bgColor,
-          ),
       ],
     );
   }
@@ -253,19 +239,107 @@ class _AnimatedMapButtonState extends State<_AnimatedMapButton>
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: widget.bgColor.withValues(alpha: 0.85),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.2),
                     width: 1.5,
                   ),
                 ),
-                child: Container(
-                  color: widget.bgColor.withValues(alpha: 0.85),
-                  child: Padding(
-                    padding: EdgeInsets.all(context.w(14)),
-                    child: Icon(widget.icon,
-                        color: widget.color, size: context.sp(24)),
-                  ),
+                child: Padding(
+                  padding: EdgeInsets.all(context.w(14)),
+                  child: Icon(widget.icon,
+                      color: widget.color, size: context.sp(24)),
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LayersButton extends StatefulWidget {
+  final VoidCallback onTap;
+  final Color bgColor;
+
+  const _LayersButton({
+    required this.onTap,
+    required this.bgColor,
+  });
+
+  @override
+  State<_LayersButton> createState() => _LayersButtonState();
+}
+
+class _LayersButtonState extends State<_LayersButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _controller.reverse();
+    widget.onTap();
+  }
+
+  void _onTapCancel() {
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: widget.bgColor.withValues(alpha: 0.9),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Center(
+                child: Icon(Icons.layers_rounded,
+                    color: Colors.blueAccent, size: 24),
               ),
             ),
           ),

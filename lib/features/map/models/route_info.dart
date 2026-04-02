@@ -30,6 +30,14 @@ class RouteInfo {
   /// Whether this object contains a real route.
   bool get hasRoute => points.isNotEmpty;
 
+  /// Returns a reversed version of this route (for swap functionality).
+  RouteInfo get reversed => RouteInfo(
+        points: points.reversed.toList(),
+        distanceMeters: distanceMeters,
+        durationSeconds: durationSeconds,
+        steps: steps.reversed.toList(),
+      );
+
   // ── Display helpers ───────────────────────────────────────────────────────
 
   /// Human-readable distance, e.g. `"12.3 km"` or `"850 m"`.

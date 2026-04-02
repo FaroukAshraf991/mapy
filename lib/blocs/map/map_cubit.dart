@@ -99,6 +99,39 @@ class MapCubit extends Cubit<MapState> with MapCubitNavigationMixin {
   void updateCurrentLocation(LatLng loc) =>
       emit(state.copyWith(currentLocation: loc));
   void updateBearing(double bearing) => emit(state.copyWith(bearing: bearing));
+  void setDestinationName(String? name) =>
+      emit(state.copyWith(destinationName: name));
+  void setOriginName(String? name) => emit(state.copyWith(originName: name));
+
+  void setStartName(String? name) => emit(state.copyWith(startName: name));
+
+  void swapRoute() {
+    final tempDest = state.destinationLocation;
+    final tempDestName = state.destinationName;
+    final tempStart = state.startLocation;
+    final tempOriginName = state.originName;
+    final currentRoute = state.routeInfo;
+
+    if (!currentRoute.hasRoute) return;
+
+    // Reverse the route points
+    final reversedRoute = currentRoute.reversed;
+
+    // Update state with reversed route and swapped locations/names
+    // Swap originName with destinationName
+    emit(state.copyWith(
+      routeInfo: reversedRoute,
+      destinationLocation: tempStart,
+      destinationName: tempOriginName ?? 'Your location',
+      originName: tempDestName ?? 'Dropped pin',
+      startLocation: tempDest,
+      startName: tempDestName ?? 'Dropped pin',
+      isRouteSwapped: !state.isRouteSwapped,
+    ));
+
+    // Update layers to show reversed route
+    updateLayers(force: true);
+  }
 
   String getTimeBasedGreeting() {
     final hour = DateTime.now().hour;
@@ -154,6 +187,7 @@ class MapCubit extends Cubit<MapState> with MapCubitNavigationMixin {
       routeInfo: state.routeInfo,
       destinationLocation: state.destinationLocation,
       currentLocation: state.currentLocation,
+      startLocation: state.startLocation,
       homeLocation: state.homeLocation,
       workLocation: state.workLocation,
       customPins: state.customPins,

@@ -176,6 +176,11 @@ mixin MapCubitNavigationMixin {
     if (state.isNavigating) toggleNavigation();
     emit(state.copyWith(
       destinationLocation: null,
+      destinationName: null,
+      originName: null,
+      startLocation: null,
+      startName: null,
+      isRouteSwapped: false,
       routeInfo: RouteInfo.empty,
       isNavigating: false,
       isRouting: false,

@@ -57,9 +57,11 @@ class MapSearchBar extends StatelessWidget {
               child: Row(
                 children: [
                   SizedBox(width: context.w(8)),
-                  Icon(Icons.search,
-                      color: isDark ? Colors.cyanAccent : Colors.blueAccent,
-                      size: context.sp(24)),
+                  Image.asset(
+                      'assets/icon/Transparent Ico (1).png',
+                      width: context.sp(28),
+                      height: context.sp(28),
+                    ),
                   SizedBox(width: context.w(14)),
                   Expanded(
                     child: Text(

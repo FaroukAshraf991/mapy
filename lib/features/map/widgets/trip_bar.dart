@@ -2,23 +2,27 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/utils/responsive.dart';
 
-/// The "Where would you like to go?" floating bar with START / EXIT buttons.
+/// The "Where would you like to go?" floating bar with START / PREVIEW / EXIT buttons.
 class TripBar extends StatelessWidget {
   final bool hasRoute;
   final bool isNavigating;
   final bool isDark;
+  final bool isSwapped;
   final VoidCallback onTap;
   final VoidCallback onStartNavigation;
   final VoidCallback onExitNavigation;
+  final VoidCallback? onPreview;
 
   const TripBar({
     super.key,
     required this.hasRoute,
     required this.isNavigating,
     required this.isDark,
+    this.isSwapped = false,
     required this.onTap,
     required this.onStartNavigation,
     required this.onExitNavigation,
+    this.onPreview,
   });
 
   @override
@@ -72,7 +76,9 @@ class TripBar extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: _buildText(context)),
-        if (hasRoute && !isNavigating) _buildStartButton(context),
+        if (hasRoute && !isNavigating && !isSwapped) _buildStartButton(context),
+        if (hasRoute && !isNavigating && isSwapped)
+          _buildPreviewButton(context),
         if (isNavigating) _buildExitButton(context),
       ],
     );
@@ -133,6 +139,32 @@ class TripBar extends StatelessWidget {
       icon: Icon(Icons.navigation_rounded, size: context.sp(22)),
       label: Text(
         'START',
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: context.sp(16),
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPreviewButton(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: onPreview,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blueAccent,
+        foregroundColor: Colors.white,
+        padding: EdgeInsets.symmetric(
+            horizontal: context.w(24), vertical: context.h(14)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(context.r(18)),
+        ),
+        elevation: 8,
+        shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
+      ),
+      icon: Icon(Icons.compare_arrows_rounded, size: context.sp(22)),
+      label: Text(
+        'PREVIEW',
         style: TextStyle(
           fontWeight: FontWeight.w900,
           fontSize: context.sp(16),

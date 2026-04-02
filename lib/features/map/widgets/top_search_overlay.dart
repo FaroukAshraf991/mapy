@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:mapy/core/utils/responsive.dart';
 import 'package:mapy/features/map/widgets/map_widgets.dart';
+import 'package:mapy/features/map/widgets/route_directions_header.dart';
 import 'package:mapy/models/place_result.dart';
 
-/// Top overlay containing the greeting, search bar, and shortcuts.
+/// Top overlay containing the greeting, search bar, shortcuts, or the active
+/// route directions header depending on routing state.
 class TopSearchOverlay extends StatelessWidget {
   final String userName;
   final String greeting;
@@ -12,6 +14,8 @@ class TopSearchOverlay extends StatelessWidget {
   final bool isRouting;
   final bool hasRecents;
   final bool showTopUI;
+  final String? destinationName;
+  final String? originName;
   final List<PlaceResult> searchHistory;
   final ll.LatLng? homeLocation;
   final ll.LatLng? workLocation;
@@ -24,6 +28,7 @@ class TopSearchOverlay extends StatelessWidget {
   final Function(Map<String, dynamic>) onCustomPinTap;
   final Function(Map<String, dynamic>) onCustomPinLongPress;
   final VoidCallback onAddTap;
+  final VoidCallback onSwapEndpoints;
 
   const TopSearchOverlay({
     super.key,
@@ -33,6 +38,8 @@ class TopSearchOverlay extends StatelessWidget {
     required this.isRouting,
     required this.hasRecents,
     this.showTopUI = true,
+    this.destinationName,
+    this.originName,
     required this.searchHistory,
     required this.homeLocation,
     required this.workLocation,
@@ -45,12 +52,13 @@ class TopSearchOverlay extends StatelessWidget {
     required this.onCustomPinTap,
     required this.onCustomPinLongPress,
     required this.onAddTap,
+    required this.onSwapEndpoints,
   });
 
   @override
   Widget build(BuildContext context) {
     if (!showTopUI) {
-      return const SizedBox.shrink();
+      return _buildDirectionsHeader(context);
     }
 
     return Positioned(
@@ -83,6 +91,23 @@ class TopSearchOverlay extends StatelessWidget {
             onAddTap: onAddTap,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDirectionsHeader(BuildContext context) {
+    final name = destinationName;
+    if (name == null || name.isEmpty) return const SizedBox.shrink();
+
+    return Positioned(
+      top: context.topPadding + context.h(12),
+      left: context.w(16),
+      right: context.w(16),
+      child: RouteDirectionsHeader(
+        originName: originName ?? 'Your location',
+        destinationName: name,
+        isDark: isDark,
+        onSwapEndpoints: onSwapEndpoints,
       ),
     );
   }
