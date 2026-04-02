@@ -58,7 +58,7 @@ class MapSearchBar extends StatelessWidget {
                 children: [
                   SizedBox(width: context.w(8)),
                   Image.asset(
-                      'assets/icon/Transparent Ico (1).png',
+                      'assets/icon/ticon.png',
                       width: context.sp(28),
                       height: context.sp(28),
                     ),

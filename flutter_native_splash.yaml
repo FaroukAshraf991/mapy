@@ -1,13 +1,13 @@
 flutter_native_splash:
-  color: "#2C2C2C"
-  image: "assets/icon/splash_v4.png"
-  color_dark: "#2C2C2C"
-  image_dark: "assets/icon/splash_v4.png"
+  color: "#010B13"
+  image: "assets/icon/transparent.png"
+  color_dark: "#010B13"
+  image_dark: "assets/icon/transparent.png"
   
   android_12:
-    color: "#2C2C2C"
-    image: "assets/icon/splash_v4.png"
-    icon_background_color: "#2C2C2C"
-    color_dark: "#2C2C2C"
-    image_dark: "assets/icon/splash_v4.png"
-    icon_background_color_dark: "#2C2C2C"
+    color: "#010B13"
+    image: "assets/icon/transparent.png"
+    icon_background_color: "#010B13"
+    color_dark: "#010B13"
+    image_dark: "assets/icon/transparent.png"
+    icon_background_color_dark: "#010B13"

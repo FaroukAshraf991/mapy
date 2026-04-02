@@ -78,9 +78,9 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#010B13"
-  image: "assets/icon/Transparent Ico (1).png"
+  image: "assets/icon/transparent.png"
   color_dark: "#010B13"
-  image_dark: "assets/icon/Transparent Ico (1).png"
+  image_dark: "assets/icon/transparent.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
