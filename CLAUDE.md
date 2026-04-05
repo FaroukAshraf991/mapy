@@ -1,5 +1,18 @@
 # CLAUDE.md — AI Assistant Guide for Mapy
 
+---
+
+> ## PRIORITY TODO LIST
+> **These are the highest-priority tasks. Address these before anything else.**
+>
+> - [ ] **[BUG] Work & Home pins not persisting** — Work and Home location pins are not saved to the cloud. When the user signs out or switches accounts, the pins are lost and must be re-entered. They need to be stored in Supabase and restored on login.
+> - [ ] **[FEATURE] Mute/Unmute button for voice navigation** — Add a mute/unmute toggle button during active navigation to allow the user to silence or re-enable the TTS voice guidance on the fly.
+> - [ ] **[UI] Move pins scroll bar into the search page** — The horizontal scroll bar containing quick-access pins (Recents, Home, Work, Add) should be relocated inside the search page, not on the main map screen.
+> - [ ] **[UI] Replace pins scroll bar with POI category tiles** — Under the search bar, display a horizontal scroll bar of POI category tiles (Restaurants, Gas Station, Parking, Hotel, Shopping, Hospital) in place of the current pins scroll bar.
+> - [ ] **[FEATURE] First-launch theme selection bottom sheet** — On first app install, show a bottom sheet drawer that slides up from the bottom asking the user to choose their preferred theme: Light, Dark, or System default.
+
+---
+
 ## Project Overview
 
 **Mapy** is a Flutter-based navigation app (v1.5.0) with a companion Next.js admin dashboard. It uses open-source mapping (MapLibre GL, OpenStreetMap, OSRM, Nominatim) and Supabase for auth/backend — no paid APIs required.
