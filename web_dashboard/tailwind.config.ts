@@ -49,6 +49,12 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        sans: ["var(--font-manrope)", "Manrope", "sans-serif"],
+        headline: ["var(--font-space-grotesk)", "Space Grotesk", "sans-serif"],
+        label: ["var(--font-inter)", "Inter", "sans-serif"],
+        body: ["var(--font-manrope)", "Manrope", "sans-serif"],
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -62,6 +68,10 @@ const config: Config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      boxShadow: {
+        "glow-primary": "0 0 20px rgba(133, 173, 255, 0.15)",
+        "glow-secondary": "0 0 20px rgba(47, 248, 1, 0.15)",
       },
     },
   },

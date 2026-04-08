@@ -113,7 +113,9 @@ class _RegisterScreenState extends State<RegisterScreen>
               color: isDark ? Colors.white : AppConstants.darkBackground)),
       body: SafeArea(
           child: Center(
-              child: SingleChildScrollView(
+              child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: context.maxAuthWidth),
+                  child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: context.w(24)),
                   child: FadeTransition(
                       opacity: fadeAnimation,
@@ -218,13 +220,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                                                     letterSpacing: 1.5))),
                                       ]),
                                 )),
-                          )))))),
+                          ))))))),
     );
   }
-  Widget _buildDatePicker(bool isDark) => GestureDetector(
-      onTap: _pickDateOfBirth,
-      child: Container(
-        padding: EdgeInsets.symmetric(
+  Widget _buildDatePicker(bool isDark) => Semantics(
+      button: true,
+      label: 'Pick Date of Birth',
+      child: GestureDetector(
+          onTap: _pickDateOfBirth,
+          child: Container(
+            padding: EdgeInsets.symmetric(
             horizontal: context.w(16), vertical: context.h(16)),
         decoration: BoxDecoration(
             color: isDark
@@ -254,5 +259,5 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ? Colors.white.withValues(alpha: 0.5)
                           : Colors.black54))),
         ]),
-      ));
+      )));
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:mapy/core/constants/app_constants.dart';
+import 'package:mapy/core/utils/responsive.dart';
 import 'package:mapy/features/auth/screens/login_screen.dart';
 import 'package:mapy/features/auth/screens/update_password_screen.dart';
 import 'package:mapy/features/profile/widgets/manage_account_sheet.dart';
@@ -89,10 +91,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showManageAccount(bool isDark) {
+    final maxSheetWidth = context.adaptiveValue(
+      mobile: double.infinity,
+      tablet: AppConstants.maxSheetWidthTablet,
+      desktop: AppConstants.maxSheetWidthDesktop,
+    );
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      constraints: maxSheetWidth == double.infinity
+          ? null
+          : BoxConstraints(maxWidth: maxSheetWidth),
       builder: (_) => ManageAccountSheet(
         isDark: isDark,
         nameController: _nameController,

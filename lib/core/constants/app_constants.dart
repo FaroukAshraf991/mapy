@@ -60,6 +60,35 @@ class AppConstants {
   static const double designWidth = 375.0;
   static const double designHeight = 812.0;
 
+  // Breakpoints (logical pixels)
+  static const double breakpointTablet = 600.0;
+  static const double breakpointDesktop = 1200.0;
+
+  // Max widths for bottom overlay panels
+  static const double maxContentWidthTablet = 560.0;
+  static const double maxContentWidthDesktop = 640.0;
+
+  // Max widths for modal sheets
+  static const double maxSheetWidthTablet = 560.0;
+  static const double maxSheetWidthDesktop = 600.0;
+
+  // Max widths for auth forms
+  static const double maxAuthWidthTablet = 480.0;
+  static const double maxAuthWidthDesktop = 520.0;
+
   // Search History
   static const int maxSearchHistory = 8;
+
+  // Navigation UI — trip bars & route info panel
+  static const double navDividerWidth = 1.5;
+  static const double modeTabIndicatorWidth = 2.5;
+  static const double pillBorderRadius = 50.0;
+  static const double navButtonBorderRadius = 18.0;
+  static const double iconButtonBorderRadius = 24.0;
+  static const double navButtonElevation = 8.0;
+  static const double navLabelLetterSpacing = 2.0;
+  static const double navButtonLetterSpacing = 1.0;
+  static const double navSubtitleLetterSpacing = -0.8;
+  static const double navDistanceLetterSpacing = 1.2;
+  static const double navInstructionLetterSpacing = -0.5;
 }

@@ -31,6 +31,7 @@ class MapState {
   final bool showTraffic;
   final bool showTransit;
   final bool showBiking;
+  final LocationFollowMode locationFollowMode;
 
   const MapState({
     this.currentStyle = MapStyle.street,
@@ -59,6 +60,7 @@ class MapState {
     this.showTraffic = false,
     this.showTransit = false,
     this.showBiking = false,
+    this.locationFollowMode = LocationFollowMode.none,
   });
 
   MapState copyWith({
@@ -88,6 +90,7 @@ class MapState {
     bool? showTraffic,
     bool? showTransit,
     bool? showBiking,
+    LocationFollowMode? locationFollowMode,
   }) {
     return MapState(
       currentStyle: currentStyle ?? this.currentStyle,
@@ -125,6 +128,7 @@ class MapState {
       showTraffic: showTraffic ?? this.showTraffic,
       showTransit: showTransit ?? this.showTransit,
       showBiking: showBiking ?? this.showBiking,
+      locationFollowMode: locationFollowMode ?? this.locationFollowMode,
     );
   }
 }

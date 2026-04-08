@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mapy/core/constants/app_constants.dart';
+import 'package:mapy/core/utils/responsive.dart';
+
+/// A slide-up modal bottom sheet with an animated entrance.
+/// Content height is driven by the child's intrinsic size and is capped at
+/// [context.maxSheetHeight] to prevent oversized sheets on tablets/desktop.
 class AnimatedBottomSheet extends StatefulWidget {
   final Widget child;
   final Color? backgroundColor;
@@ -6,6 +12,7 @@ class AnimatedBottomSheet extends StatefulWidget {
   final bool isDismissible;
   final bool enableDrag;
   final Color? barrierColor;
+
   const AnimatedBottomSheet({
     super.key,
     required this.child,
@@ -15,6 +22,7 @@ class AnimatedBottomSheet extends StatefulWidget {
     this.enableDrag = true,
     this.barrierColor,
   });
+
   static Future<T?> show<T>({
     required BuildContext context,
     required Widget child,
@@ -28,6 +36,11 @@ class AnimatedBottomSheet extends StatefulWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final defaultBgColor = isDark ? const Color(0xFF1A1A1A) : Colors.white;
     final defaultRadius = fullScreen ? 0.0 : 24.0;
+    final maxSheetWidth = context.adaptiveValue(
+      mobile: double.infinity,
+      tablet: AppConstants.maxSheetWidthTablet,
+      desktop: AppConstants.maxSheetWidthDesktop,
+    );
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
@@ -35,6 +48,9 @@ class AnimatedBottomSheet extends StatefulWidget {
       barrierColor: barrierColor ?? Colors.black54,
       isDismissible: isDismissible,
       enableDrag: enableDrag,
+      constraints: maxSheetWidth == double.infinity
+          ? null
+          : BoxConstraints(maxWidth: maxSheetWidth),
       builder: (context) => AnimatedBottomSheet(
         backgroundColor: backgroundColor ?? defaultBgColor,
         radius: radius ?? defaultRadius,
@@ -44,14 +60,17 @@ class AnimatedBottomSheet extends StatefulWidget {
       ),
     );
   }
+
   @override
   State<AnimatedBottomSheet> createState() => _AnimatedBottomSheetState();
 }
+
 class _AnimatedBottomSheetState extends State<AnimatedBottomSheet>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   late Animation<Offset> _slideAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -75,11 +94,13 @@ class _AnimatedBottomSheetState extends State<AnimatedBottomSheet>
     ));
     _controller.forward();
   }
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final radius = widget.radius ?? 24.0;
@@ -92,113 +113,20 @@ class _AnimatedBottomSheetState extends State<AnimatedBottomSheet>
         animation: _animation,
         builder: (context, child) {
           return ClipRRect(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(radius),
-            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
             child: Container(
+              constraints:
+                  BoxConstraints(maxHeight: context.maxSheetHeight),
               decoration: BoxDecoration(
                 color: backgroundColor,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(radius),
-                ),
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(radius)),
               ),
               child: child,
             ),
           );
         },
         child: widget.child,
-      ),
-    );
-  }
-}
-class DraggableBottomSheet extends StatefulWidget {
-  final Widget child;
-  final Widget? dragHandle;
-  final double minSize;
-  final double maxSize;
-  final double initialSize;
-  final Color? backgroundColor;
-  final bool snap;
-  const DraggableBottomSheet({
-    super.key,
-    required this.child,
-    this.dragHandle,
-    this.minSize = 0.25,
-    this.maxSize = 0.9,
-    this.initialSize = 0.5,
-    this.backgroundColor,
-    this.snap = true,
-  });
-  static Future<T?> show<T>({
-    required BuildContext context,
-    required Widget child,
-    Widget? dragHandle,
-    double minSize = 0.25,
-    double maxSize = 0.9,
-    double initialSize = 0.5,
-    Color? backgroundColor,
-    bool snap = true,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultBgColor = isDark ? const Color(0xFF1A1A1A) : Colors.white;
-    return showModalBottomSheet<T>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
-      builder: (context) => DraggableBottomSheet(
-        dragHandle: dragHandle,
-        minSize: minSize,
-        maxSize: maxSize,
-        initialSize: initialSize,
-        backgroundColor: backgroundColor ?? defaultBgColor,
-        snap: snap,
-        child: child,
-      ),
-    );
-  }
-  @override
-  State<DraggableBottomSheet> createState() => _DraggableBottomSheetState();
-}
-class _DraggableBottomSheetState extends State<DraggableBottomSheet>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late double _currentSize;
-  @override
-  void initState() {
-    super.initState();
-    _currentSize = widget.initialSize;
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-  }
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-  @override
-  Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = widget.backgroundColor ??
-        (isDark ? const Color(0xFF1A1A1A) : Colors.white);
-    return AnimatedContainer(
-      duration: widget.snap ? const Duration(milliseconds: 300) : Duration.zero,
-      curve: Curves.easeOutCubic,
-      child: Container(
-        height: screenHeight * _currentSize,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            if (widget.dragHandle != null) widget.dragHandle!,
-            Expanded(child: widget.child),
-          ],
-        ),
       ),
     );
   }

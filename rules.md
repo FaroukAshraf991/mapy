@@ -8,18 +8,19 @@
 5. **Clean Code**: Follow Clean Code principles — meaningful names, small single-purpose functions, no duplication, minimal comments (self-documenting code), and clear separation of concerns.
 6. **Development Architecture**: Follow established development architecture patterns (e.g., MVVM, Clean Architecture, feature-first structure) consistently across the entire codebase.
 7. **Post-Task Rule Verification**: After completing EVERY task/command, explicitly verify that ALL rules in this document have been followed. Report any violations found and fix them before finishing.
-8. **Command Documentation**: Document all command interactions by appending to ZenConversation.md after completing each task.
-9. **Responsive UI**: Always build UI using responsive design principles. Use `context.w()`, `context.h()`, `context.sp()`, `context.r()` from responsive utils for all sizes, padding, and text. Never use hardcoded pixel values.
-10. **Hardcoding**: All values (URLs, keys, constants, thresholds, defaults, strings) MUST be hardcoded directly in code, except for secrets. Follow the Hardcoding & Configuration section rules.
+8. **Responsive UI**: Always build UI using responsive design principles. Use `context.w()`, `context.h()`, `context.sp()`, `context.r()` from responsive utils for all sizes, padding, and text. Never use hardcoded pixel values.
+9. **Hardcoding**: All values (URLs, keys, constants, thresholds, defaults, strings) MUST be hardcoded directly in code, except for secrets. Follow the Hardcoding & Configuration section rules.
+10. **Strict File Size Limits:** No `.dart` file should exceed 150-200 lines. If a file is approaching this limit, you must refactor and split the logic or UI into smaller, modular files.
+11. **Widget Extraction:** Do not write massive, deeply nested widget trees. Break down complex screens into smaller, reusable, independent widgets. Place these extracted widgets in a dedicated `widgets/` directory.
+12. **Single Responsibility Principle (SRP):** Each class, function, and file must have exactly one reason to change. 
+13. **Separation of Concerns:** Strictly separate the UI layer from business logic and state management. Do not put API calls, complex data parsing, or database queries directly inside UI widgets.
+14. **Clean Architecture:** Structure the project logically (e.g., feature-first architecture). Keep screens, reusable widgets, models, and controllers cleanly separated in their respective directories.
+15. **Readability & Naming:** Prioritize readable code over clever or compact code. Use highly descriptive names for variables, methods, and classes.
 
 ---
 
 This document defines the absolute "Ground Truth" for the Mapy application. These rules MUST be referenced and followed before EVERY command or modification.
-
-## 🔒 Hardcoding & Configuration
-1. **Hardcode Everything**: All values (URLs, keys, constants, thresholds, defaults) MUST be hardcoded directly in code, except for secrets.
-2. **Secrets Exception**: Only `lib/core/config/secrets.dart` and `.env` files may contain externalized values (loaded via `--dart-define`).
-
+ 
 ---
 
 ## 📦 Versioning & Repository

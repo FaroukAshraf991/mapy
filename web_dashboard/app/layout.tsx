@@ -1,14 +1,26 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Space_Grotesk, Manrope, Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({ subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
-  title: "Maps Dashboard - Professional Map Management",
-  description: "Professional maps dashboard for managing your application. Track users, maps, analytics, and reports in one place.",
-  keywords: ["maps", "dashboard", "analytics", "management", "reports"],
-  authors: [{ name: "Maps App" }],
+  title: "Mapy Engine | Enterprise HUD",
+  description: "Geospatial command center for Mapy — manage users, spatial data, and analytics.",
 };
 
 export const viewport = {
@@ -19,8 +31,10 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning className="dark">
+      <body className={`${spaceGrotesk.variable} ${manrope.variable} ${inter.variable} font-sans`}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

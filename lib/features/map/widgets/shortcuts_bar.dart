@@ -1,15 +1,12 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/utils/responsive.dart';
-import 'package:mapy/features/map/widgets/map_widgets.dart';
 
+/// Google Maps–style shortcuts row: Home · Work · More
 class ShortcutsBar extends StatelessWidget {
   final bool isDark;
-  final bool hasRecents;
   final bool hasHome;
   final bool hasWork;
   final List<Map<String, dynamic>> customPins;
-  final VoidCallback onRecentsTap;
   final VoidCallback onHomeTap;
   final VoidCallback onWorkTap;
   final Function(Map<String, dynamic>) onCustomPinTap;
@@ -19,11 +16,9 @@ class ShortcutsBar extends StatelessWidget {
   const ShortcutsBar({
     super.key,
     required this.isDark,
-    required this.hasRecents,
     required this.hasHome,
     required this.hasWork,
     required this.customPins,
-    required this.onRecentsTap,
     required this.onHomeTap,
     required this.onWorkTap,
     required this.onCustomPinTap,
@@ -33,78 +28,159 @@ class ShortcutsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(context.r(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: context.w(12),
-            offset: Offset(0, context.h(4)),
+    return Row(
+      children: [
+        Expanded(
+          child: _ShortcutPill(
+            isDark: isDark,
+            icon: Icons.home_rounded,
+            label: 'Home',
+            subtitle: hasHome ? 'Saved' : 'Set location',
+            onTap: onHomeTap,
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(context.r(24)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        ),
+        SizedBox(width: context.w(8)),
+        Expanded(
+          child: _ShortcutPill(
+            isDark: isDark,
+            icon: Icons.work_rounded,
+            label: 'Work',
+            subtitle: hasWork ? 'Saved' : 'Set location',
+            onTap: onWorkTap,
+          ),
+        ),
+        SizedBox(width: context.w(8)),
+        _MoreButton(isDark: isDark, onTap: onAddTap),
+      ],
+    );
+  }
+}
+
+// ─── Pill button (Home / Work) ────────────────────────────────────────────────
+
+class _ShortcutPill extends StatelessWidget {
+  final bool isDark;
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ShortcutPill({
+    required this.isDark,
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.white54 : Colors.black45;
+    final iconBg = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.08);
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(context.r(14)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(context.r(14)),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.w(10),
+            vertical: context.h(10),
+          ),
+          child: Row(
             children: [
-              SizedBox(
-                height: context.h(44),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      LocationChip(
-                        type: 'recent',
-                        icon: Icons.history_rounded,
-                        label: 'Recents',
-                        isSet: hasRecents,
-                        activeColor: Colors.purple,
-                        isDark: isDark,
-                        trailingIcon: Icons.arrow_drop_down_rounded,
-                        onTap: onRecentsTap,
+              Container(
+                width: context.w(36),
+                height: context.w(36),
+                decoration:
+                    BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                child: Icon(icon, size: context.sp(18), color: textColor),
+              ),
+              SizedBox(width: context.w(8)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: context.sp(13),
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
                       ),
-                      SizedBox(width: context.w(8)),
-                      LocationChip(
-                        type: 'home',
-                        icon: Icons.home_rounded,
-                        label: 'Home',
-                        isSet: hasHome,
-                        activeColor: Colors.blue,
-                        isDark: isDark,
-                        onTap: onHomeTap,
+                    ),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: context.sp(11),
+                        color: subtitleColor,
                       ),
-                      SizedBox(width: context.w(6)),
-                      LocationChip(
-                        type: 'work',
-                        icon: Icons.work_rounded,
-                        label: 'Work',
-                        isSet: hasWork,
-                        activeColor: Colors.orange,
-                        isDark: isDark,
-                        onTap: onWorkTap,
-                      ),
-                      ...customPins.map((pin) => Padding(
-                            padding: EdgeInsets.only(left: context.w(6)),
-                            child: LocationChip(
-                              type: 'custom',
-                              icon: Icons.place_rounded,
-                              label: pin['label'],
-                              isSet: true,
-                              activeColor: Colors.teal,
-                              isDark: isDark,
-                              onTap: () => onCustomPinTap(pin),
-                              onLongPress: () => onCustomPinLongPress(pin),
-                            ),
-                          )),
-                      SizedBox(width: context.w(6)),
-                      AddShortcutButton(isDark: isDark, onTap: onAddTap),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── More button ──────────────────────────────────────────────────────────────
+
+class _MoreButton extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _MoreButton({required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final iconBg = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.08);
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(context.r(14)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(context.r(14)),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.w(12),
+            vertical: context.h(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: context.w(36),
+                height: context.w(36),
+                decoration:
+                    BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                child: Icon(Icons.more_horiz_rounded,
+                    size: context.sp(18), color: textColor),
+              ),
+              SizedBox(width: context.w(6)),
+              Text(
+                'More',
+                style: TextStyle(
+                  fontSize: context.sp(13),
+                  fontWeight: FontWeight.w500,
+                  color: textColor,
                 ),
               ),
             ],

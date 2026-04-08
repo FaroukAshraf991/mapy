@@ -1,9 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/utils/responsive.dart';
+import 'package:mapy/core/widgets/constrained_content_box.dart';
 import 'package:mapy/features/map/models/route_info.dart';
+import 'package:mapy/services/voice_navigation_service.dart';
 
-class NavigationGuidanceBar extends StatelessWidget {
+class NavigationGuidanceBar extends StatefulWidget {
   final RouteInfo routeInfo;
   final int currentStepIndex;
   final double distanceToNextStep;
@@ -20,25 +22,40 @@ class NavigationGuidanceBar extends StatelessWidget {
   });
 
   @override
+  State<NavigationGuidanceBar> createState() => _NavigationGuidanceBarState();
+}
+
+class _NavigationGuidanceBarState extends State<NavigationGuidanceBar> {
+  late bool _voiceEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _voiceEnabled = VoiceNavigationService.isEnabled;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (routeInfo.steps.isEmpty || currentStepIndex >= routeInfo.steps.length) {
+    if (widget.routeInfo.steps.isEmpty ||
+        widget.currentStepIndex >= widget.routeInfo.steps.length) {
       return const SizedBox.shrink();
     }
 
-    final step = routeInfo.steps[currentStepIndex];
+    final step = widget.routeInfo.steps[widget.currentStepIndex];
 
-    final distanceText = distanceToNextStep > 1000
-        ? (distanceToNextStep / 1000).toStringAsFixed(1)
-        : distanceToNextStep.round().toString();
-    final distanceUnit = distanceToNextStep > 1000 ? 'km' : 'm';
+    final distanceText = widget.distanceToNextStep > 1000
+        ? (widget.distanceToNextStep / 1000).toStringAsFixed(1)
+        : widget.distanceToNextStep.round().toString();
+    final distanceUnit = widget.distanceToNextStep > 1000 ? 'km' : 'm';
 
-    return Hero(
+    return ConstrainedContentBox(
+      child: Hero(
       tag: 'navigationGuidance',
       child: Container(
         margin: EdgeInsets.symmetric(
-            horizontal: context.w(16), vertical: context.h(8)),
+            horizontal: context.w(8), vertical: context.h(8)),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(context.r(24)),
+          borderRadius: BorderRadius.circular(context.r(20)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.2),
@@ -52,14 +69,15 @@ class NavigationGuidanceBar extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: EdgeInsets.all(context.w(20)),
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.w(16), vertical: context.h(12)),
               decoration: BoxDecoration(
-                color: isDark
+                color: widget.isDark
                     ? Colors.black.withValues(alpha: 0.65)
                     : Colors.white.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(context.r(24)),
+                borderRadius: BorderRadius.circular(context.r(20)),
                 border: Border.all(
-                  color: isDark
+                  color: widget.isDark
                       ? Colors.white.withValues(alpha: 0.1)
                       : Colors.white.withValues(alpha: 0.3),
                   width: 1.5,
@@ -68,7 +86,7 @@ class NavigationGuidanceBar extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(context.w(12)),
+                    padding: EdgeInsets.all(context.w(10)),
                     decoration: BoxDecoration(
                       color: Colors.blueAccent.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
@@ -80,10 +98,10 @@ class NavigationGuidanceBar extends StatelessWidget {
                     child: Icon(
                       step.icon,
                       color: Colors.blueAccent,
-                      size: context.sp(32),
+                      size: context.sp(26),
                     ),
                   ),
-                  SizedBox(width: context.w(20)),
+                  SizedBox(width: context.w(14)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,47 +112,82 @@ class NavigationGuidanceBar extends StatelessWidget {
                             Text(
                               '$distanceText $distanceUnit',
                               style: TextStyle(
-                                color: isDark ? Colors.white70 : Colors.black54,
+                                color: widget.isDark
+                                    ? Colors.white70
+                                    : Colors.black54,
                                 fontSize: context.sp(14),
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 1.2,
                               ),
                             ),
-                            if (currentSpeed > 0) ...[
+                            if (widget.currentSpeed > 0) ...[
                               SizedBox(width: context.w(16)),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: context.w(10),
-                                  vertical: context.h(4),
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.2),
-                                  borderRadius:
-                                      BorderRadius.circular(context.r(12)),
-                                ),
-                                child: Text(
-                                  '${currentSpeed.round()} km/h',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: context.sp(12),
-                                    fontWeight: FontWeight.w700,
+                              Flexible(
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.w(10),
+                                    vertical: context.h(4),
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withValues(alpha: 0.2),
+                                    borderRadius:
+                                        BorderRadius.circular(context.r(12)),
+                                  ),
+                                  child: Text(
+                                    '${widget.currentSpeed.round()} km/h',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontSize: context.sp(12),
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ],
                         ),
-                        SizedBox(height: context.h(4)),
+                        SizedBox(height: context.h(2)),
                         Text(
                           step.instruction,
                           style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontSize: context.sp(22),
+                            color:
+                                widget.isDark ? Colors.white : Colors.black87,
+                            fontSize: context.sp(19),
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.5,
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  SizedBox(width: context.w(12)),
+                  Semantics(
+                    button: true,
+                    label: _voiceEnabled ? 'Mute navigation voice' : 'Unmute navigation voice',
+                    child: GestureDetector(
+                    onTap: () async {
+                      await VoiceNavigationService.setEnabled(!_voiceEnabled);
+                      setState(() {
+                        _voiceEnabled = VoiceNavigationService.isEnabled;
+                      });
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(context.w(10)),
+                      decoration: BoxDecoration(
+                        color: widget.isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _voiceEnabled
+                            ? Icons.volume_up_rounded
+                            : Icons.volume_off_rounded,
+                        color: widget.isDark ? Colors.white70 : Colors.black54,
+                        size: context.sp(22),
+                      ),
+                    ),
                     ),
                   ),
                 ],
@@ -143,6 +196,7 @@ class NavigationGuidanceBar extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }

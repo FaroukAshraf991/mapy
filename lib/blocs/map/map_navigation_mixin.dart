@@ -22,16 +22,49 @@ mixin MapCubitNavigationMixin {
   set currentStepIndex(int value);
   double get distanceToNextStep;
   set distanceToNextStep(double value);
+  int get routeProgressIndex;
+  set routeProgressIndex(int value);
+  bool get isClosed;
   Future<void> updateLayers({bool force});
   void emit(MapState state);
 
+  double _bearing(ll.LatLng from, ll.LatLng to) {
+    final lat1 = from.latitude * math.pi / 180;
+    final lat2 = to.latitude * math.pi / 180;
+    final dLon = (to.longitude - from.longitude) * math.pi / 180;
+    final y = math.sin(dLon) * math.cos(lat2);
+    final x = math.cos(lat1) * math.sin(lat2) -
+        math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
+    return (math.atan2(y, x) * 180 / math.pi + 360) % 360;
+  }
+
+  double _computeInitialBearing(LatLng from, List<ll.LatLng> routePoints) {
+    if (routePoints.length < 2) return 0.0;
+    int nearest = 0;
+    double minDist = double.infinity;
+    for (int i = 0; i < routePoints.length; i++) {
+      final d = Geolocator.distanceBetween(
+          from.latitude, from.longitude,
+          routePoints[i].latitude, routePoints[i].longitude);
+      if (d < minDist) {
+        minDist = d;
+        nearest = i;
+      }
+    }
+    final next = (nearest + 1).clamp(0, routePoints.length - 1);
+    if (nearest == next) return 0.0;
+    return _bearing(routePoints[nearest], routePoints[next]);
+  }
+
   Future<void> navigateTo(LatLng loc) async {
-    if (state.currentLocation == null || mapController == null) return;
+    final routeOrigin = state.startLocation ?? state.currentLocation;
+    if (routeOrigin == null || mapController == null) return;
+    if (isClosed) return;
 
     emit(state.copyWith(destinationLocation: loc, isRouting: true));
 
     try {
-      final origin = state.currentLocation!;
+      final origin = routeOrigin;
       final originLl = ll.LatLng(origin.latitude, origin.longitude);
       final destLl = ll.LatLng(loc.latitude, loc.longitude);
 
@@ -40,6 +73,8 @@ mixin MapCubitNavigationMixin {
         destLl,
         mode: state.travelMode,
       );
+
+      if (isClosed) return;
 
       if (alternatives.isNotEmpty) {
         emit(state.copyWith(
@@ -76,8 +111,8 @@ mixin MapCubitNavigationMixin {
               left: 80, top: 80, right: 80, bottom: 80),
         );
       } else {
-        // No route found - fall back to direct view
         emit(state.copyWith(
+          destinationLocation: null,
           routeInfo: RouteInfo.empty,
           routeAlternatives: [],
           isRouting: false,
@@ -100,9 +135,11 @@ mixin MapCubitNavigationMixin {
         );
       }
 
-      await updateLayers(force: true);
+      if (!isClosed) await updateLayers(force: true);
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(
+        destinationLocation: null,
         routeInfo: RouteInfo.empty,
         routeAlternatives: [],
         isRouting: false,
@@ -146,12 +183,17 @@ mixin MapCubitNavigationMixin {
     isFollowingUser = newIsNavigating;
     if (!newIsNavigating) {
       navigationRotation = 0.0;
+      routeProgressIndex = 0;
       mapController!.animateCamera(CameraUpdate.bearingTo(0));
       mapController!.animateCamera(CameraUpdate.tiltTo(0));
       NotificationService.cancelNavigationNotification();
     }
     emit(state.copyWith(isNavigating: newIsNavigating));
     if (newIsNavigating && state.currentLocation != null) {
+      if (state.routeInfo.points.isNotEmpty) {
+        navigationRotation =
+            _computeInitialBearing(state.currentLocation!, state.routeInfo.points);
+      }
       mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
@@ -173,7 +215,14 @@ mixin MapCubitNavigationMixin {
   }
 
   void clearRoute() {
-    if (state.isNavigating) toggleNavigation();
+    // Inline the navigation-exit side-effects instead of calling toggleNavigation()
+    // (which is async and would race with our own updateLayers call below).
+    if (state.isNavigating) {
+      isFollowingUser = false;
+      navigationRotation = 0.0;
+      mapController?.animateCamera(CameraUpdate.bearingTo(0));
+      mapController?.animateCamera(CameraUpdate.tiltTo(0));
+    }
     emit(state.copyWith(
       destinationLocation: null,
       destinationName: null,
@@ -187,8 +236,9 @@ mixin MapCubitNavigationMixin {
     ));
     currentStepIndex = 0;
     distanceToNextStep = 0.0;
+    routeProgressIndex = 0;
     NotificationService.cancelNavigationNotification();
-    updateLayers();
+    updateLayers(force: true);
   }
 
   void updateNavigationPerspective(Position position) {
@@ -211,12 +261,12 @@ mixin MapCubitNavigationMixin {
     final targetTilt = AppConstants.baseTilt +
         (speedKmH / AppConstants.speedToTiltDivisor)
             .clamp(0, AppConstants.maxTiltIncrease);
-    final bearingRad = navigationRotation * math.pi / 180;
-    final latOffset = AppConstants.cameraOffsetDistance * math.cos(bearingRad);
-    final lngOffset = AppConstants.cameraOffsetDistance * math.sin(bearingRad);
+    // We enforce exact center targeting. 
+    // Previous implementations offset the target forward, which caused the map to pivot around a point ahead of the car, 
+    // wildly swinging the user pin horizontally during rotation and forcing it under the bottom UI tiles.
     final offsetCenter = LatLng(
-      state.currentLocation!.latitude + latOffset,
-      state.currentLocation!.longitude + lngOffset,
+      state.currentLocation!.latitude,
+      state.currentLocation!.longitude,
     );
     mapController!.animateCamera(
       CameraUpdate.newCameraPosition(
@@ -233,6 +283,27 @@ mixin MapCubitNavigationMixin {
   void updateGuidance(Position position) {
     if (state.routeInfo.steps.isEmpty ||
         currentStepIndex >= state.routeInfo.steps.length) return;
+        
+    // Off-Route / Rerouting Logic + progress index tracking
+    if (state.routeInfo.points.isNotEmpty && !state.isFetchingRoute) {
+      double minDistance = double.infinity;
+      int nearestIdx = routeProgressIndex;
+      for (int i = 0; i < state.routeInfo.points.length; i++) {
+        final pt = state.routeInfo.points[i];
+        final d = Geolocator.distanceBetween(
+            position.latitude, position.longitude, pt.latitude, pt.longitude);
+        if (d < minDistance) {
+          minDistance = d;
+          nearestIdx = i;
+        }
+      }
+      routeProgressIndex = nearestIdx;
+      if (minDistance > 60.0) {
+        navigateTo(state.destinationLocation!);
+        return;
+      }
+    }
+
     final currentStep = state.routeInfo.steps[currentStepIndex];
     final distance = Geolocator.distanceBetween(
       position.latitude,

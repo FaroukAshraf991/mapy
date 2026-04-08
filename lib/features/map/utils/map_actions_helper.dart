@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:latlong2/latlong.dart' as ll;
@@ -39,6 +38,7 @@ class MapActionsHelper {
       mapCubit.mapController!.getVisibleRegion();
       mapCubit.updateBearing(
           mapCubit.mapController!.cameraPosition?.bearing ?? 0.0);
+      mapCubit.onCameraIdleDragCheck();
     }
   }
 
@@ -70,31 +70,117 @@ class MapActionsHelper {
       showSnackBar(result.errorMessage ?? 'Location error');
       return;
     }
-    try {
-      final position = await mapCubit.getCurrentPosition();
-      if (position == null || !isMounted()) return;
-      onStateChanged();
-      mapCubit.mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: position, zoom: 18.0, tilt: 45),
-        ),
-        duration: const Duration(milliseconds: 1200),
-      );
-    } catch (e) {
-      if (!isMounted()) return;
-      showSnackBar('Location Error: $e');
-    }
+    await mapCubit.cycleFollowMode();
+    if (isMounted()) onStateChanged();
   }
 
   Future<void> onWhereToTapped() async {
+    final state = mapCubit.state;
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
-      MaterialPageRoute(builder: (_) => const NextWhereToScreen()),
+      MaterialPageRoute(
+        builder: (_) => NextWhereToScreen(
+          homeLocation: state.homeLocation,
+          workLocation: state.workLocation,
+          customPins: state.customPins,
+          searchHistory: state.searchHistory,
+        ),
+      ),
     );
     if (result == null || !isMounted()) return;
-    await mapCubit.loadHistory();
-    final loc = LatLng(result['lat'] as double, result['lon'] as double);
+    await _applySearchResult(result);
+  }
 
-    // Set start location to current GPS
+  Future<void> onWhereToTappedWithQuery(String query) async {
+    final state = mapCubit.state;
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => NextWhereToScreen(
+          homeLocation: state.homeLocation,
+          workLocation: state.workLocation,
+          customPins: state.customPins,
+          searchHistory: state.searchHistory,
+          initialQuery: query,
+        ),
+      ),
+    );
+    if (result == null || !isMounted()) return;
+    await _applySearchResult(result);
+  }
+
+  Future<void> onChangeOriginTapped() async {
+    final state = mapCubit.state;
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => NextWhereToScreen(
+          homeLocation: state.homeLocation,
+          workLocation: state.workLocation,
+          customPins: state.customPins,
+          searchHistory: state.searchHistory,
+        ),
+      ),
+    );
+    if (result == null || !isMounted()) return;
+    // Only handle plain place selection — ignore setHome/setWork/addPin here
+    final action = result['action'] as String?;
+    if (action != null) return;
+
+    final lat = result['lat'] as double;
+    final lon = result['lon'] as double;
+    final name = result['name'] as String? ?? 'Custom location';
+
+    mapCubit.emit(
+        mapCubit.state.copyWith(startLocation: LatLng(lat, lon)));
+    mapCubit.setOriginName(name);
+    mapCubit.setStartName(name);
+
+    final dest = mapCubit.state.destinationLocation;
+    if (dest != null) await mapCubit.navigateTo(dest);
+    if (isMounted()) onStateChanged();
+  }
+
+  Future<void> onCategoryTapped(String query) async {
+    final state = mapCubit.state;
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (_) => NextWhereToScreen(
+          initialQuery: query,
+          homeLocation: state.homeLocation,
+          workLocation: state.workLocation,
+          customPins: state.customPins,
+          searchHistory: state.searchHistory,
+        ),
+      ),
+    );
+    if (result == null || !isMounted()) return;
+    await _applySearchResult(result);
+  }
+
+  Future<void> _applySearchResult(Map<String, dynamic> result) async {
+    final action = result['action'] as String?;
+    final lat = result['lat'] as double;
+    final lon = result['lon'] as double;
+    final loc = LatLng(lat, lon);
+    final llLoc = ll.LatLng(lat, lon);
+
+    if (action == 'setHome') {
+      await mapCubit.saveHomeLocation(llLoc);
+      if (isMounted()) showSnackBar('Home location saved');
+      return;
+    }
+    if (action == 'setWork') {
+      await mapCubit.saveWorkLocation(llLoc);
+      if (isMounted()) showSnackBar('Work location saved');
+      return;
+    }
+    if (action == 'addPin') {
+      final label = result['name'] as String;
+      await mapCubit.addCustomPin(label, loc);
+      if (isMounted()) showSnackBar('Pin "$label" saved!');
+      return;
+    }
+
+    await mapCubit.loadHistory();
+
     final currentLoc = mapCubit.state.currentLocation;
     if (currentLoc != null) {
       mapCubit.emit(mapCubit.state.copyWith(startLocation: currentLoc));

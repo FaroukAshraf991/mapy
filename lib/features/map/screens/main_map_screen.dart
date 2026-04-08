@@ -2,14 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:mapy/features/map/widgets/profile_bottom_sheet.dart';
 import 'package:mapy/services/notification_service.dart';
 import 'package:mapy/services/voice_navigation_service.dart';
 import 'package:mapy/services/location_share_service.dart';
-import 'package:mapy/features/map/utils/map_layer_manager.dart';
-import 'package:mapy/features/map/widgets/map_widgets.dart';
 import 'package:mapy/blocs/map/map_cubit.dart';
 import 'package:mapy/blocs/map/map_state.dart';
 import 'package:mapy/features/map/utils/map_actions_helper.dart';
@@ -49,7 +46,6 @@ class _MainMapScreenState extends State<MainMapScreen> {
     NotificationService.initialize();
     await VoiceNavigationService.initialize();
     _mapCubit.startLocationTracking();
-    await _actions.relocateMe();
   }
 
   @override
@@ -66,42 +62,7 @@ class _MainMapScreenState extends State<MainMapScreen> {
     );
   }
 
-  void _handleLocationButton(String type) {
-    final loc = type == 'home'
-        ? _mapCubit.state.homeLocation
-        : _mapCubit.state.workLocation;
-    if (loc == null) {
-      _actions.openPicker(type);
-    } else {
-      final locLibre = loc.toLibre();
-      LocationActionSheet.show(
-        context: context,
-        type: type,
-        latitude: locLibre.latitude,
-        longitude: locLibre.longitude,
-        onNavigate: () {
-          _mapCubit.navigateTo(locLibre);
-          setState(() {});
-        },
-        onChange: () => _actions.openPicker(type),
-        onClear: () async {
-          final error = type == 'home'
-              ? await _mapCubit.clearHomeLocation()
-              : await _mapCubit.clearWorkLocation();
-          if (!mounted) return;
-          if (error != null) {
-            _showSnackBar('Failed to clear location: $error',
-                color: Colors.redAccent);
-            return;
-          }
-          _showSnackBar(
-              '${type == 'home' ? 'Home' : 'Work'} location cleared.');
-        },
-      );
-    }
-  }
-
-  void _showProfileBottomSheet() {
+void _showProfileBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -171,16 +132,11 @@ class _MainMapScreenState extends State<MainMapScreen> {
                     state: state,
                     onSearchTap: _actions.onWhereToTapped,
                     onAvatarTap: _showProfileBottomSheet,
-                    onRecentsTap: () {},
-                    onHomeTap: () => _handleLocationButton('home'),
-                    onWorkTap: () => _handleLocationButton('work'),
-                    onCustomPinTap: (pin) {
-                      _mapCubit.navigateTo(LatLng(pin['lat'], pin['lon']));
-                      setState(() {});
-                    },
-                    onCustomPinLongPress: _actions.deleteCustomPin,
-                    onAddTap: _actions.addCustomPin,
+                    onVoiceResult: _actions.onWhereToTappedWithQuery,
+                    onCategoryTap: _actions.onCategoryTapped,
                     onSwapEndpoints: _actions.swapEndpoints,
+                    onOriginTap: _actions.onChangeOriginTapped,
+                    onDestinationTap: _actions.onWhereToTapped,
                   ),
                 MapBuilder.buildTopLayersButton(
                   context: context,

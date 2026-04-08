@@ -84,6 +84,21 @@ class SearchHistoryService {
     } catch (_) {}
   }
 
+  static Future<void> replaceHistory(
+      String userId, List<PlaceResult> items) async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = items.map((p) => json.encode(p.toJson())).toList();
+    await prefs.setStringList(_localKey(userId), encoded);
+
+    try {
+      await _client.from('profiles').upsert({
+        'id': userId,
+        'search_history': items.map((p) => p.toJson()).toList(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (_) {}
+  }
+
   static Future<void> clearHistory(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_localKey(userId));

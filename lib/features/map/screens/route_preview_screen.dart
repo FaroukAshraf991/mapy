@@ -27,7 +27,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
   int _currentIndex = 0;
   MapLibreMapController? _mapController;
   bool _isIconLoaded = false;
-  bool _isAnimating = false;
+  // No _isAnimating lock — all operations are fire-and-forget for instant responsiveness
 
   /// Current step driven by _currentIndex
   RouteStep get _currentStep => widget.routeInfo.steps[_currentIndex];
@@ -54,7 +54,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
 
           // Floating Card at Top
           Positioned(
-            top: MediaQuery.of(context).padding.top + context.h(50),
+            top: MediaQuery.of(context).padding.top + context.h(16),
             left: context.w(16),
             right: context.w(16),
             child: _buildFloatingCard(isDark),
@@ -112,95 +112,92 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
   }
 
   Widget _buildFloatingCard(bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(context.r(12)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: context.w(20),
-            offset: Offset(0, context.h(8)),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Top Half: Back button + Title
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.w(16),
-              vertical: context.h(12),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(context.r(12)),
+      child: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: context.w(20),
+              offset: Offset(0, context.h(8)),
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                    size: context.sp(24),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                SizedBox(width: context.w(12)),
-                Expanded(
-                  child: Text(
-                    'Route Preview',
-                    style: TextStyle(
-                      fontSize: context.sp(18),
-                      fontWeight: FontWeight.w700,
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Top section
+            Container(
+              color: isDark ? Colors.black : Colors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: context.w(16),
+                vertical: context.h(12),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
                       color: isDark ? Colors.white : Colors.black87,
+                      size: context.sp(24),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  SizedBox(width: context.w(12)),
+                  Expanded(
+                    child: Text(
+                      'Route Preview',
+                      style: TextStyle(
+                        fontSize: context.sp(18),
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          Divider(
-            height: 1,
-            thickness: 1,
-            color: isDark ? Colors.white12 : Colors.black12,
-          ),
-
-          // Bottom Half: REACTIVE instruction text from current step
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.w(16),
-              vertical: context.h(14),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(context.w(10)),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4285F4).withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _currentIcon, // ← REACTIVE to _currentIndex
-                    color: const Color(0xFF4285F4),
-                    size: context.sp(24),
-                  ),
-                ),
-                SizedBox(width: context.w(14)),
-                Expanded(
-                  child: Text(
-                    _currentInstruction, // ← REACTIVE to _currentIndex
-                    style: TextStyle(
-                      fontSize: context.sp(16),
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : Colors.black87,
+            // Bottom section: instruction
+            Container(
+              color: isDark ? Colors.black : Colors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: context.w(16),
+                vertical: context.h(14),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(context.w(10)),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4285F4).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _currentIcon,
+                      color: const Color(0xFF4285F4),
+                      size: context.sp(24),
                     ),
                   ),
-                ),
-              ],
+                  SizedBox(width: context.w(14)),
+                  Expanded(
+                    child: Text(
+                      _currentInstruction,
+                      style: TextStyle(
+                        fontSize: context.sp(16),
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -229,7 +226,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                 topLeft: Radius.circular(context.r(24)),
                 bottomLeft: Radius.circular(context.r(24)),
               ),
-              onTap: _currentIndex > 0 && !_isAnimating ? _previousStep : null,
+              onTap: _currentIndex > 0 ? _previousStep : null,
               child: Padding(
                 padding: EdgeInsets.all(context.w(12)),
                 child: Icon(
@@ -262,8 +259,7 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
                 topRight: Radius.circular(context.r(24)),
                 bottomRight: Radius.circular(context.r(24)),
               ),
-              onTap: _currentIndex < widget.routeInfo.steps.length - 1 &&
-                      !_isAnimating
+              onTap: _currentIndex < widget.routeInfo.steps.length - 1
                   ? _nextStep
                   : null,
               child: Padding(
@@ -393,74 +389,48 @@ class _RoutePreviewScreenState extends State<RoutePreviewScreen> {
     }
   }
 
-  /// Animate camera to step and update all visuals
-  /// This function MUST:
-  /// 1. Update index FIRST (text updates instantly)
-  /// 2. Animate camera to step location
-  /// 3. Update arrow marker
-  Future<void> _animateToStep(int index) async {
-    if (_mapController == null ||
-        index >= widget.routeInfo.steps.length ||
-        _isAnimating) return;
+  /// Animate camera to step and update all visuals — fully non-blocking.
+  /// Index + text update instantly; marker and camera fire in background.
+  void _animateToStep(int index) {
+    if (_mapController == null || index >= widget.routeInfo.steps.length) return;
 
-    _isAnimating = true;
-
-    // CRITICAL: setState BEFORE animation - text updates INSTANTLY
-    if (mounted) {
-      setState(() {
-        _currentIndex = index;
-      });
-    }
+    // Update UI instantly
+    if (mounted) setState(() => _currentIndex = index);
 
     final step = widget.routeInfo.steps[index];
     final bearing = RoutePreviewHelper.calculateBearingFromPolyline(
         widget.routeInfo.points, step);
+    final target = LatLng(step.location.latitude, step.location.longitude);
 
-    // Update arrow marker BEFORE animation (so it moves with camera)
-    try {
-      await _mapController!.clearSymbols();
-    } catch (_) {}
+    // Fire camera immediately — interrupts any in-progress animation
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: target, zoom: 17.5, bearing: bearing, tilt: 0.0),
+      ),
+      duration: const Duration(milliseconds: 400),
+    );
 
-    try {
-      await _mapController!.addSymbol(
-        SymbolOptions(
-          geometry: LatLng(step.location.latitude, step.location.longitude),
-          iconImage: 'direction-arrow',
-          iconSize: 1.0,
-          iconRotate: 0.0,
-          iconAnchor: 'center',
-        ),
-      );
-    } catch (_) {}
-
-    // Animate camera AFTER marker is placed
-    try {
-      await _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(step.location.latitude, step.location.longitude),
-            zoom: 17.5,
-            bearing: bearing,
-            tilt: 0.0,
-          ),
-        ),
-        duration: const Duration(milliseconds: 800),
-      );
-    } catch (_) {}
-
-    _isAnimating = false;
+    // Update marker in background (doesn't block the button)
+    _mapController!.clearSymbols().then((_) {
+      if (!mounted || _mapController == null) return;
+      _mapController!.addSymbol(SymbolOptions(
+        geometry: target,
+        iconImage: 'direction-arrow',
+        iconSize: 1.0,
+        iconRotate: 0.0,
+        iconAnchor: 'center',
+      ));
+    }).catchError((_) {});
   }
 
-  /// Navigate to next step - REACTIVE to instruction text
   void _nextStep() {
-    if (_currentIndex < widget.routeInfo.steps.length - 1 && !_isAnimating) {
+    if (_currentIndex < widget.routeInfo.steps.length - 1) {
       _animateToStep(_currentIndex + 1);
     }
   }
 
-  /// Navigate to previous step - REACTIVE to instruction text
   void _previousStep() {
-    if (_currentIndex > 0 && !_isAnimating) {
+    if (_currentIndex > 0) {
       _animateToStep(_currentIndex - 1);
     }
   }

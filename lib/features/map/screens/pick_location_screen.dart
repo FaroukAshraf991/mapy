@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' as ll;
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:mapy/core/constants/app_constants.dart';
 import 'package:mapy/core/utils/location_permission_helper.dart';
 import 'package:mapy/core/utils/responsive.dart';
@@ -16,16 +16,22 @@ class PickLocationScreen extends StatefulWidget {
 }
 
 class _PickLocationScreenState extends State<PickLocationScreen> {
-  final MapController _mapController = MapController();
-  LatLng _centerLocation =
-      const LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
+  MapLibreMapController? _mapController;
+
+  // Default fallback; real center is read from controller.cameraPosition on confirm
+  LatLng _defaultLocation = const LatLng(
+    AppConstants.defaultLat,
+    AppConstants.defaultLng,
+  );
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _relocateMe();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _relocateMe());
+  }
+
+  void _onMapCreated(MapLibreMapController controller) {
+    _mapController = controller;
   }
 
   Future<void> _relocateMe() async {
@@ -34,49 +40,56 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
       if (!result.granted) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.errorMessage ?? 'Location error')));
+          SnackBar(content: Text(result.errorMessage ?? 'Location error')),
+        );
         return;
       }
 
       if (!mounted) return;
-      Position position = await Geolocator.getCurrentPosition();
-      LatLng newLoc = LatLng(position.latitude, position.longitude);
-      setState(() {
-        _centerLocation = newLoc;
-      });
-      _mapController.move(newLoc, 17.0);
+      final position = await Geolocator.getCurrentPosition();
+      final newTarget = LatLng(position.latitude, position.longitude);
+      setState(() => _defaultLocation = newTarget);
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(newTarget, 17.0),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Location Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Location Error: $e')),
+      );
     }
+  }
+
+  void _confirmLocation() {
+    final target = _mapController?.cameraPosition?.target ?? _defaultLocation;
+    Navigator.of(context).pop(
+      ll.LatLng(target.latitude, target.longitude),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final styleString =
+        isDark ? AppConstants.darkStyleUrl : AppConstants.osmStyleUrl;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _centerLocation,
-              initialZoom: 15.0,
-              onPositionChanged: (position, hasGesture) {
-                setState(() {
-                  _centerLocation = position.center;
-                });
-              },
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: AppConstants.osmTileUrl,
-                userAgentPackageName: AppConstants.osmTileUserAgent,
+          Semantics(
+            label: 'Map for picking location. Drag to move, pinch to zoom.',
+            child: MapLibreMap(
+              styleString: styleString,
+              initialCameraPosition: CameraPosition(
+                target: _defaultLocation,
+                zoom: 15.0,
               ),
-            ],
+              onMapCreated: _onMapCreated,
+              trackCameraPosition: true,
+              myLocationEnabled: false,
+              compassEnabled: false,
+            ),
           ),
           Center(
             child: Padding(
@@ -93,10 +106,14 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
             right: context.w(20),
             child: FloatingActionButton(
               heroTag: 'relocate_btn_pick',
+              tooltip: 'My location',
               onPressed: _relocateMe,
               backgroundColor: Colors.white,
-              child: Icon(Icons.my_location,
-                  color: Colors.green, size: context.sp(24)),
+              child: Icon(
+                Icons.my_location,
+                color: Colors.green,
+                size: context.sp(24),
+              ),
             ),
           ),
           Positioned(
@@ -111,14 +128,16 @@ class _PickLocationScreenState extends State<PickLocationScreen> {
                   borderRadius: BorderRadius.circular(context.r(12)),
                 ),
               ),
-              onPressed: () {
-                Navigator.of(context).pop(_centerLocation);
-              },
-              child: Text('Confirm Location',
-                  style:
-                      TextStyle(fontSize: context.sp(18), color: Colors.white)),
+              onPressed: _confirmLocation,
+              child: Text(
+                'Confirm Location',
+                style: TextStyle(
+                  fontSize: context.sp(18),
+                  color: Colors.white,
+                ),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

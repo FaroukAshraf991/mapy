@@ -1,13 +1,13 @@
 flutter_native_splash:
   color: "#010B13"
-  image: "assets/icon/transparent.png"
+  image: "assets/icon/ticon.png"
   color_dark: "#010B13"
-  image_dark: "assets/icon/transparent.png"
-  
+  image_dark: "assets/icon/ticon.png"
+
   android_12:
     color: "#010B13"
-    image: "assets/icon/transparent.png"
+    image: "assets/icon/ticon.png"
     icon_background_color: "#010B13"
     color_dark: "#010B13"
-    image_dark: "assets/icon/transparent.png"
+    image_dark: "assets/icon/ticon.png"
     icon_background_color_dark: "#010B13"

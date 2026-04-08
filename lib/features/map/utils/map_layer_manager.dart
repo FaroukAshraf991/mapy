@@ -33,6 +33,7 @@ class MapLayerManager {
     required List<Map<String, dynamic>> customPins,
     required bool isNavigating,
     required double navigationRotation,
+    int routeProgressIndex = 0,
     bool force = false,
     bool showTraffic = false,
   }) async {
@@ -69,23 +70,44 @@ class MapLayerManager {
       await controller.clearLines();
       await controller.clearCircles();
 
-      // Draw route line
+      // Draw route line — passed section (gray) + remaining section (blue)
       if (routeInfo.hasRoute && routeInfo.points.isNotEmpty) {
-        try {
-          await controller.addLine(
-            LineOptions(
-              geometry: routeInfo.points.map((p) => p.toLibre()).toList(),
-              lineColor: "#448AFF",
-              lineWidth: 6.0,
-              lineOpacity: 0.8,
-              lineJoin: "round",
-            ),
-          );
-        } on PlatformException catch (_) {}
+        final pts = routeInfo.points;
+        final splitIdx = isNavigating
+            ? routeProgressIndex.clamp(0, pts.length - 1)
+            : 0;
+        // Draw passed segment (gray, dimmed) when navigating and progress > 0
+        if (isNavigating && splitIdx > 0) {
+          try {
+            await controller.addLine(
+              LineOptions(
+                geometry: pts.sublist(0, splitIdx + 1).map((p) => p.toLibre()).toList(),
+                lineColor: "#888888",
+                lineWidth: 5.0,
+                lineOpacity: 0.45,
+                lineJoin: "round",
+              ),
+            );
+          } on PlatformException catch (_) {}
+        }
+        // Draw remaining segment (blue, full opacity)
+        if (splitIdx < pts.length - 1) {
+          try {
+            await controller.addLine(
+              LineOptions(
+                geometry: pts.sublist(splitIdx).map((p) => p.toLibre()).toList(),
+                lineColor: "#448AFF",
+                lineWidth: 6.0,
+                lineOpacity: 0.9,
+                lineJoin: "round",
+              ),
+            );
+          } on PlatformException catch (_) {}
+        }
       }
 
       // Draw destination red pin
-      if (destinationLocation != null) {
+      if (destinationLocation != null && routeInfo.hasRoute) {
         try {
           // Red destination pin
           await controller.addSymbol(

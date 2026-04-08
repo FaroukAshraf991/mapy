@@ -1,6 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:mapy/core/constants/app_constants.dart';
+import 'package:mapy/core/constants/app_strings.dart';
 import 'package:mapy/core/utils/responsive.dart';
+import 'package:mapy/features/map/models/map_enums.dart';
+import 'package:mapy/features/map/models/route_info.dart';
+import 'package:mapy/features/map/widgets/navigating_trip_content.dart';
+import 'package:mapy/features/map/widgets/pre_nav_trip_content.dart';
 
 /// The "Where would you like to go?" floating bar with START / PREVIEW / EXIT buttons.
 class TripBar extends StatelessWidget {
@@ -12,6 +18,9 @@ class TripBar extends StatelessWidget {
   final VoidCallback onStartNavigation;
   final VoidCallback onExitNavigation;
   final VoidCallback? onPreview;
+  final RouteInfo? routeInfo;
+  final TravelMode? travelMode;
+  final bool isFetchingRoute;
 
   const TripBar({
     super.key,
@@ -23,6 +32,9 @@ class TripBar extends StatelessWidget {
     required this.onStartNavigation,
     required this.onExitNavigation,
     this.onPreview,
+    this.routeInfo,
+    this.travelMode,
+    this.isFetchingRoute = false,
   });
 
   @override
@@ -45,7 +57,7 @@ class TripBar extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Material(
             color: isDark
-                ? Colors.black.withValues(alpha: 0.7)
+                ? const Color(0xFF1E1E1E).withValues(alpha: 0.85)
                 : Colors.white.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(context.r(28)),
             child: InkWell(
@@ -73,6 +85,25 @@ class TripBar extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
+    if (isNavigating && routeInfo != null && travelMode != null) {
+      return NavigatingTripContent(
+        isDark: isDark,
+        routeInfo: routeInfo!,
+        travelMode: travelMode!,
+        onExitNavigation: onExitNavigation,
+      );
+    }
+    if (hasRoute && !isNavigating && routeInfo != null && travelMode != null) {
+      return PreNavTripContent(
+        isDark: isDark,
+        routeInfo: routeInfo!,
+        travelMode: travelMode!,
+        isFetchingRoute: isFetchingRoute,
+        isSwapped: isSwapped,
+        onStart: onStartNavigation,
+        onPreview: onPreview,
+      );
+    }
     return Row(
       children: [
         Expanded(child: _buildText(context)),
@@ -86,14 +117,14 @@ class TripBar extends StatelessWidget {
 
   Widget _buildText(BuildContext context) {
     final statusLabel = isNavigating
-        ? 'ACTIVE GUIDANCE'
-        : (hasRoute ? 'ESTIMATED TRAVEL TIME' : 'READY TO GO');
+        ? AppStrings.activeGuidance
+        : (hasRoute ? AppStrings.estimatedTravelTime : AppStrings.readyToGo);
     final statusColor = isNavigating
         ? Colors.blueAccent
         : (isDark ? Colors.white38 : Colors.black38);
     final subtitle = isNavigating
-        ? 'Drive safely'
-        : (hasRoute ? 'Route calculated' : 'Where would you like to go?');
+        ? AppStrings.driveSafely
+        : (hasRoute ? AppStrings.routeCalculated : AppStrings.whereToGo);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +136,7 @@ class TripBar extends StatelessWidget {
             fontSize: context.sp(10),
             fontWeight: FontWeight.w900,
             color: statusColor,
-            letterSpacing: 2.0,
+            letterSpacing: AppConstants.navLabelLetterSpacing,
           ),
         ),
         SizedBox(height: context.h(6)),
@@ -115,7 +146,7 @@ class TripBar extends StatelessWidget {
             fontSize: context.sp(20),
             fontWeight: FontWeight.w900,
             color: isDark ? Colors.white : Colors.black87,
-            letterSpacing: -0.8,
+            letterSpacing: AppConstants.navSubtitleLetterSpacing,
           ),
         ),
       ],
@@ -131,18 +162,18 @@ class TripBar extends StatelessWidget {
         padding: EdgeInsets.symmetric(
             horizontal: context.w(24), vertical: context.h(14)),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(context.r(18)),
+          borderRadius: BorderRadius.circular(context.r(AppConstants.navButtonBorderRadius)),
         ),
-        elevation: 8,
+        elevation: AppConstants.navButtonElevation,
         shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
       ),
       icon: Icon(Icons.navigation_rounded, size: context.sp(22)),
       label: Text(
-        'START',
+        AppStrings.start,
         style: TextStyle(
           fontWeight: FontWeight.w900,
           fontSize: context.sp(16),
-          letterSpacing: 1.0,
+          letterSpacing: AppConstants.navButtonLetterSpacing,
         ),
       ),
     );
@@ -157,43 +188,50 @@ class TripBar extends StatelessWidget {
         padding: EdgeInsets.symmetric(
             horizontal: context.w(24), vertical: context.h(14)),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(context.r(18)),
+          borderRadius: BorderRadius.circular(context.r(AppConstants.navButtonBorderRadius)),
         ),
-        elevation: 8,
+        elevation: AppConstants.navButtonElevation,
         shadowColor: Colors.blueAccent.withValues(alpha: 0.4),
       ),
       icon: Icon(Icons.compare_arrows_rounded, size: context.sp(22)),
       label: Text(
-        'PREVIEW',
+        AppStrings.preview,
         style: TextStyle(
           fontWeight: FontWeight.w900,
           fontSize: context.sp(16),
-          letterSpacing: 1.0,
+          letterSpacing: AppConstants.navButtonLetterSpacing,
         ),
       ),
     );
   }
 
   Widget _buildExitButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onExitNavigation,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
-        foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(
-            horizontal: context.w(24), vertical: context.h(14)),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(context.r(18)),
+    final size = context.r(48);
+    return GestureDetector(
+      onTap: onExitNavigation,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.redAccent.withValues(alpha: 0.9),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.redAccent.withValues(alpha: 0.4),
+              blurRadius: context.w(8),
+              offset: Offset(0, context.h(3)),
+            ),
+          ],
         ),
-        elevation: 8,
-        shadowColor: Colors.redAccent.withValues(alpha: 0.4),
-      ),
-      child: Text(
-        'EXIT',
-        style: TextStyle(
-          fontWeight: FontWeight.w900,
-          fontSize: context.sp(16),
-          letterSpacing: 1.0,
+        child: Center(
+          child: Text(
+            'X',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: context.sp(18),
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ),
       ),
     );

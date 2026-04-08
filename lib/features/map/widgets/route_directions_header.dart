@@ -1,170 +1,120 @@
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mapy/core/constants/app_strings.dart';
 import 'package:mapy/core/utils/responsive.dart';
 
-/// Displays the active route's origin and destination in a card at the top
-/// of the map screen, mirroring the Google Maps directions input style.
+/// Google Maps–style directions header shown during pre-navigation.
+/// Origin row and destination row are both tappable to change each endpoint.
 class RouteDirectionsHeader extends StatelessWidget {
   final String originName;
   final String destinationName;
   final bool isDark;
   final VoidCallback onSwapEndpoints;
-  final VoidCallback? onMoreOptions;
+  final VoidCallback? onOriginTap;
+  final VoidCallback? onDestinationTap;
 
   const RouteDirectionsHeader({
     super.key,
-    this.originName = 'Your location',
+    this.originName = AppStrings.yourLocation,
     required this.destinationName,
     required this.isDark,
     required this.onSwapEndpoints,
-    this.onMoreOptions,
+    this.onOriginTap,
+    this.onDestinationTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = isDark ? const Color(0xFF1E2326) : Colors.white;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.black.withValues(alpha: 0.08);
+
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
+        color: bgColor,
         borderRadius: BorderRadius.circular(context.r(16)),
+        border: Border.all(color: borderColor, width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: 0.30),
             blurRadius: context.w(20),
             offset: Offset(0, context.h(6)),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(context.r(16)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.80)
-                  : Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(context.r(16)),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.06),
-                width: 1.0,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildOriginRow(context),
-                _buildDividerWithDots(context),
-                _buildDestinationRow(context),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOriginRow(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.w(16),
-        vertical: context.h(14),
-      ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildOriginDot(context),
-          SizedBox(width: context.w(14)),
-          Expanded(
-            child: Text(
-              originName,
-              style: TextStyle(
-                fontSize: context.sp(15),
-                fontWeight: FontWeight.w600,
-                color: Colors.blueAccent,
-              ),
-            ),
+          _OriginRow(
+            originName: originName,
+            isDark: isDark,
+            onTap: onOriginTap,
           ),
-          _buildMoreButton(context),
+          _DotsConnector(isDark: isDark),
+          _DestinationRow(
+            destinationName: destinationName,
+            isDark: isDark,
+            onTap: onDestinationTap,
+            onSwap: onSwapEndpoints,
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDestinationRow(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.w(16),
-        vertical: context.h(14),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.location_on_rounded,
-            color: Colors.redAccent.shade100,
-            size: context.sp(20),
-          ),
-          SizedBox(width: context.w(14)),
-          Expanded(
-            child: Text(
-              destinationName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: context.sp(15),
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-          ),
-          _buildSwapButton(context),
-        ],
-      ),
-    );
-  }
+// ─── Origin row ───────────────────────────────────────────────────────────────
 
-  Widget _buildDividerWithDots(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(width: context.w(23)),
-        Column(
-          mainAxisSize: MainAxisSize.min,
+class _OriginRow extends StatelessWidget {
+  final String originName;
+  final bool isDark;
+  final VoidCallback? onTap;
+
+  const _OriginRow({
+    required this.originName,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(context.r(16))),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+            horizontal: context.w(14), vertical: context.h(10)),
+        child: Row(
           children: [
-            _dot(context),
-            SizedBox(height: context.h(3)),
-            _dot(context),
-            SizedBox(height: context.h(3)),
-            _dot(context),
+            _buildOriginDot(context),
+            SizedBox(width: context.w(10)),
+            Expanded(
+              child: Text(
+                originName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: context.sp(13),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blueAccent,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.more_horiz_rounded,
+              size: context.sp(18),
+              color: isDark ? Colors.white38 : Colors.black26,
+            ),
           ],
         ),
-        SizedBox(width: context.w(11)),
-        Expanded(
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.08),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _dot(BuildContext context) => Container(
-        width: context.w(4),
-        height: context.h(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.35)
-              : Colors.black.withValues(alpha: 0.25),
-        ),
-      );
-
   Widget _buildOriginDot(BuildContext context) => Container(
-        width: context.w(20),
-        height: context.w(20),
+        width: context.sp(18),
+        height: context.sp(18),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.blueAccent.withValues(alpha: 0.15),
@@ -172,42 +122,118 @@ class RouteDirectionsHeader extends StatelessWidget {
         ),
         child: Center(
           child: Container(
-            width: context.w(8),
-            height: context.w(8),
+            width: context.sp(7),
+            height: context.sp(7),
             decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.blueAccent,
-            ),
+                shape: BoxShape.circle, color: Colors.blueAccent),
           ),
         ),
       );
+}
 
-  Widget _buildMoreButton(BuildContext context) => IconButton(
-        onPressed: onMoreOptions,
-        icon: Icon(
-          Icons.more_horiz_rounded,
-          size: context.sp(22),
-          color: isDark ? Colors.white54 : Colors.black45,
-        ),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
-        constraints: const BoxConstraints(),
-        tooltip: 'More options',
-      );
+// ─── Dots connector ───────────────────────────────────────────────────────────
 
-  Widget _buildSwapButton(BuildContext context) => IconButton(
-        onPressed: () {
-          debugPrint('🔄 Swap button pressed in RouteDirectionsHeader');
-          onSwapEndpoints();
-        },
-        icon: Icon(
-          Icons.swap_vert_rounded,
-          size: context.sp(22),
-          color: isDark ? Colors.white54 : Colors.black45,
+class _DotsConnector extends StatelessWidget {
+  final bool isDark;
+  const _DotsConnector({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final dotColor = isDark
+        ? Colors.white.withValues(alpha: 0.30)
+        : Colors.black.withValues(alpha: 0.20);
+
+    return Row(
+      children: [
+        SizedBox(width: context.w(21)),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _dot(context, dotColor),
+            SizedBox(height: context.h(2)),
+            _dot(context, dotColor),
+            SizedBox(height: context.h(2)),
+            _dot(context, dotColor),
+          ],
         ),
-        padding: EdgeInsets.zero,
-        visualDensity: VisualDensity.compact,
-        constraints: const BoxConstraints(),
-        tooltip: 'Swap endpoints',
+        SizedBox(width: context.w(10)),
+        Expanded(
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.07)
+                : Colors.black.withValues(alpha: 0.07),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dot(BuildContext context, Color color) => Container(
+        width: context.w(4),
+        height: context.h(4),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
       );
+}
+
+// ─── Destination row ──────────────────────────────────────────────────────────
+
+class _DestinationRow extends StatelessWidget {
+  final String destinationName;
+  final bool isDark;
+  final VoidCallback? onTap;
+  final VoidCallback onSwap;
+
+  const _DestinationRow({
+    required this.destinationName,
+    required this.isDark,
+    required this.onTap,
+    required this.onSwap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? Colors.white : Colors.black87;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius:
+          BorderRadius.vertical(bottom: Radius.circular(context.r(16))),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+            horizontal: context.w(14), vertical: context.h(10)),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_on_rounded,
+              color: Colors.redAccent.shade100,
+              size: context.sp(18),
+            ),
+            SizedBox(width: context.w(10)),
+            Expanded(
+              child: Text(
+                destinationName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: context.sp(13),
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onSwap,
+              child: Icon(
+                Icons.swap_vert_rounded,
+                size: context.sp(18),
+                color: isDark ? Colors.white54 : Colors.black45,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

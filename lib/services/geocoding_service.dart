@@ -22,6 +22,7 @@ class GeocodingService {
       'format': 'json',
       'limit': '10',
       'addressdetails': '1',
+      'dedupe': '1',
     };
 
     if (biasLat != null && biasLon != null) {
@@ -61,6 +62,36 @@ class GeocodingService {
     }
   }
 
+  /// Reverse-geocodes [lat]/[lon] and returns the ISO 3166-1 alpha-2 country
+  /// code (e.g. "eg", "us") or null if it cannot be determined.
+  static Future<String?> getCountryCode(double lat, double lon) async {
+    final uri = Uri.parse('${AppConstants.nominatimBaseUrl}/reverse').replace(
+      queryParameters: {
+        'lat': lat.toString(),
+        'lon': lon.toString(),
+        'format': 'json',
+        'addressdetails': '1',
+        'zoom': '3',
+      },
+    );
+    try {
+      final response = await http.get(
+        uri,
+        headers: {
+          'User-Agent': AppConstants.nominatimUserAgent,
+          'Accept-Language': 'en',
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode != 200) return null;
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      final address = data['address'] as Map<String, dynamic>?;
+      return address?['country_code'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Fetch a route between [origin] and [destination] for the given [mode].
   static Future<RouteInfo> getRoute(LatLng origin, LatLng destination,
       {TravelMode mode = TravelMode.driving}) async {
@@ -94,7 +125,7 @@ class GeocodingService {
 
     final uri = Uri.parse('$baseUrl/route/v1/driving/$coordStr')
         .replace(queryParameters: {
-      'overview': 'simplified',
+      'overview': 'full',
       'geometries': 'geojson',
       'steps': 'true',
       'alternatives': alternatives.toString(),
@@ -137,16 +168,19 @@ class GeocodingService {
             steps = legSteps.map((s) {
               final maneuver = s['maneuver'] as Map<String, dynamic>;
               final maneuverLoc = maneuver['location'] as List<dynamic>;
+              final type = maneuver['type'] as String? ?? 'turn';
+              final modifier = maneuver['modifier'] as String? ?? '';
+              final streetName = s['name'] as String? ?? '';
+              final exitNumber = maneuver['exit'] as int?;
               return RouteStep(
-                instruction:
-                    maneuver['instruction'] as String? ?? 'Keep straight',
-                maneuverType: maneuver['type'] as String? ?? 'turn',
+                instruction: _buildInstruction(type, modifier, streetName, exitNumber),
+                maneuverType: type,
                 location: LatLng(
                   (maneuverLoc[1] as num).toDouble(),
                   (maneuverLoc[0] as num).toDouble(),
                 ),
-                modifier: maneuver['modifier'] as String? ?? '',
-                name: s['name'] as String? ?? '',
+                modifier: modifier,
+                name: streetName,
               );
             }).toList();
           }
@@ -174,6 +208,81 @@ class GeocodingService {
       }).toList();
     } catch (_) {
       return [];
+    }
+  }
+
+  /// Generates a human-readable instruction from OSRM maneuver fields.
+  /// OSRM never returns an `instruction` string — it only gives type + modifier.
+  static String _buildInstruction(
+      String type, String modifier, String name, int? exit) {
+    final on = name.isNotEmpty ? ' on $name' : '';
+    final mod = modifier.isNotEmpty ? modifier : 'straight';
+
+    switch (type) {
+      case 'depart':
+        return 'Head ${_modifierToDirection(modifier)}${on.isNotEmpty ? on : ''}';
+      case 'arrive':
+        return 'You have arrived at your destination';
+      case 'turn':
+        if (modifier == 'straight') return 'Continue straight${on}';
+        if (modifier == 'uturn') return 'Make a U-turn${on}';
+        return 'Turn ${_capitalize(modifier)}${on}';
+      case 'continue':
+      case 'new name':
+        if (modifier == 'straight' || modifier.isEmpty) return 'Continue straight${on}';
+        return 'Continue ${_capitalize(modifier)}${on}';
+      case 'merge':
+        return 'Merge ${_capitalize(mod)}${on}';
+      case 'on ramp':
+        return 'Take the ramp on the ${_capitalize(mod)}${on}';
+      case 'off ramp':
+        return 'Take the exit on the ${_capitalize(mod)}${on}';
+      case 'fork':
+        return 'Keep ${_capitalize(mod)} at the fork${on}';
+      case 'end of road':
+        return 'Turn ${_capitalize(mod)} at the end of the road${on}';
+      case 'roundabout':
+      case 'rotary':
+        if (exit != null) {
+          return 'Take the ${_ordinal(exit)} exit at the roundabout${on}';
+        }
+        return 'Enter the roundabout${on}';
+      case 'roundabout turn':
+        return 'At the roundabout, turn ${_capitalize(mod)}${on}';
+      case 'exit roundabout':
+      case 'exit rotary':
+        return 'Exit the roundabout${on}';
+      case 'use lane':
+        return 'Use the correct lane${on}';
+      case 'notification':
+        return 'Continue${on}';
+      default:
+        if (modifier == 'straight' || modifier.isEmpty) return 'Continue straight${on}';
+        return '${_capitalize(type)} ${_capitalize(mod)}${on}';
+    }
+  }
+
+  static String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
+  }
+
+  static String _ordinal(int n) {
+    if (n == 1) return '1st';
+    if (n == 2) return '2nd';
+    if (n == 3) return '3rd';
+    return '${n}th';
+  }
+
+  static String _modifierToDirection(String modifier) {
+    switch (modifier) {
+      case 'north': return 'north';
+      case 'south': return 'south';
+      case 'east': return 'east';
+      case 'west': return 'west';
+      case 'right': return 'east';
+      case 'left': return 'west';
+      default: return 'forward';
     }
   }
 }

@@ -1,17 +1,23 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mapy/core/utils/responsive.dart';
+import 'package:mapy/core/widgets/constrained_content_box.dart';
 import 'package:mapy/features/map/models/route_info.dart';
 import 'package:mapy/features/map/models/map_enums.dart';
+import 'package:mapy/features/map/widgets/route_info_default_content.dart';
 class RouteInfoPanel extends StatelessWidget {
   final RouteInfo routeInfo;
-  final bool isNavigating, isDark, isFetchingRoute;
+  final bool isNavigating, isDark;
   final TravelMode travelMode;
   final VoidCallback onClear;
   final Function(TravelMode) onModeSelect;
   final List<RouteAlternative>? alternatives;
   final int selectedAlternativeIndex;
   final VoidCallback? onShowAlternatives;
+  final VoidCallback? onStartNavigation;
+  final VoidCallback? onPreview;
+  final bool isSwapped;
+  final bool isFetchingRoute;
   const RouteInfoPanel(
       {super.key,
       required this.routeInfo,
@@ -23,12 +29,16 @@ class RouteInfoPanel extends StatelessWidget {
       required this.onModeSelect,
       this.alternatives,
       this.selectedAlternativeIndex = 0,
-      this.onShowAlternatives});
+      this.onShowAlternatives,
+      this.onStartNavigation,
+      this.onPreview,
+      this.isSwapped = false});
   @override
   Widget build(BuildContext context) {
     if (!routeInfo.hasRoute) return const SizedBox.shrink();
     final r = isNavigating ? context.r(16) : context.r(28);
-    return Container(
+    return ConstrainedContentBox(
+      child: Container(
       margin: EdgeInsets.only(
           left: context.w(16),
           right: context.w(16),
@@ -46,8 +56,8 @@ class RouteInfoPanel extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
               padding: EdgeInsets.symmetric(
-                  horizontal: isNavigating ? context.w(16) : context.w(24),
-                  vertical: isNavigating ? context.h(12) : context.h(20)),
+                  horizontal: isNavigating ? context.w(16) : context.w(16),
+                  vertical: isNavigating ? context.h(12) : context.h(14)),
               decoration: BoxDecoration(
                   color: isDark
                       ? Colors.black.withValues(alpha: 0.7)
@@ -63,112 +73,24 @@ class RouteInfoPanel extends StatelessWidget {
                   : _buildDefaultMode(context),
             ),
           )),
+    ),
     );
   }
   Widget _buildDefaultMode(BuildContext context) {
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Expanded(
-            child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  _modeChip(context, TravelMode.driving,
-                      Icons.directions_car_rounded),
-                  SizedBox(width: context.w(6)),
-                  _modeChip(
-                      context, TravelMode.motorcycle, Icons.motorcycle_rounded),
-                  SizedBox(width: context.w(6)),
-                  _modeChip(context, TravelMode.bicycle,
-                      Icons.directions_bike_rounded),
-                  SizedBox(width: context.w(6)),
-                  _modeChip(
-                      context, TravelMode.foot, Icons.directions_walk_rounded),
-                ]))),
-        _closeButton(context),
-      ]),
-      SizedBox(height: context.h(20)),
-      if (isFetchingRoute)
-        Row(children: [
-          SizedBox(
-              width: context.sp(20),
-              height: context.sp(20),
-              child: CircularProgressIndicator(
-                  strokeWidth: 2.5, color: Colors.blueAccent)),
-          SizedBox(width: context.w(12)),
-          Text('Calculating…',
-              style: TextStyle(
-                  color: Colors.blueAccent,
-                  fontSize: context.sp(20),
-                  fontWeight: FontWeight.w800))
-        ])
-      else
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(routeInfo.etaText,
-              style: TextStyle(
-                  color: Colors.blueAccent,
-                  fontSize: context.sp(24),
-                  fontWeight: FontWeight.w900)),
-          SizedBox(height: context.h(4)),
-          Row(children: [
-            Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: context.w(8), vertical: context.h(4)),
-                decoration: BoxDecoration(
-                    color: Colors.blueAccent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(context.r(8))),
-                child: Text(routeInfo.distanceText,
-                    style: TextStyle(
-                        color: Colors.blueAccent,
-                        fontSize: context.sp(13),
-                        fontWeight: FontWeight.w800))),
-            const Spacer(),
-            if (alternatives != null && alternatives!.isNotEmpty)
-              GestureDetector(
-                  onTap: onShowAlternatives,
-                  child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: context.w(14), vertical: context.h(8)),
-                      decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                              colors: [
-                                Colors.green.withValues(alpha: 0.2),
-                                Colors.teal.withValues(alpha: 0.15)
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight),
-                          borderRadius: BorderRadius.circular(context.r(12)),
-                          border: Border.all(
-                              color: Colors.green.withValues(alpha: 0.4),
-                              width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.green.withValues(alpha: 0.15),
-                                blurRadius: context.w(8),
-                                offset: Offset(0, context.h(2)))
-                          ]),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.route_rounded,
-                            color: Colors.green, size: context.sp(18)),
-                        SizedBox(width: context.w(6)),
-                        Text('${alternatives!.length} Routes',
-                            style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.w700,
-                                fontSize: context.sp(13))),
-                        SizedBox(width: context.w(4)),
-                        Icon(Icons.expand_more_rounded,
-                            color: Colors.green.withValues(alpha: 0.8),
-                            size: context.sp(16)),
-                      ]))),
-          ]),
-          SizedBox(height: context.h(6)),
-          Text('Fastest route via Main St',
-              style: TextStyle(
-                  color: isDark ? Colors.white38 : Colors.black38,
-                  fontSize: context.sp(12),
-                  fontWeight: FontWeight.w700)),
-        ]),
-    ]);
+    return RouteInfoDefaultContent(
+      routeInfo: routeInfo,
+      travelMode: travelMode,
+      isDark: isDark,
+      isFetchingRoute: isFetchingRoute,
+      isSwapped: isSwapped,
+      onStartNavigation: onStartNavigation,
+      onPreview: onPreview,
+      onClear: onClear,
+      onModeSelect: onModeSelect,
+      alternatives: alternatives,
+      selectedAlternativeIndex: selectedAlternativeIndex,
+      onShowAlternatives: onShowAlternatives,
+    );
   }
   Widget _buildCompactDrivingMode(BuildContext context) {
     return Row(children: [
@@ -198,27 +120,6 @@ class RouteInfoPanel extends StatelessWidget {
           ])),
     ]);
   }
-  Widget _modeChip(BuildContext context, TravelMode mode, IconData icon) {
-    final isSelected = travelMode == mode;
-    return Material(
-        color: Colors.transparent,
-        child: InkWell(
-            onTap: isNavigating ? null : () => onModeSelect(mode),
-            borderRadius: BorderRadius.circular(context.r(12)),
-            child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: EdgeInsets.all(context.w(10)),
-                decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.blueAccent.withValues(alpha: 0.1)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(context.r(12))),
-                child: Icon(icon,
-                    size: context.sp(20),
-                    color: isSelected
-                        ? Colors.blueAccent
-                        : (isDark ? Colors.white54 : Colors.black45)))));
-  }
   IconData _getIconForMode(TravelMode mode) {
     switch (mode) {
       case TravelMode.driving:
@@ -231,19 +132,4 @@ class RouteInfoPanel extends StatelessWidget {
         return Icons.directions_walk_rounded;
     }
   }
-  Widget _closeButton(BuildContext context) => Material(
-      color: Colors.transparent,
-      child: InkWell(
-          borderRadius: BorderRadius.circular(context.r(20)),
-          onTap: onClear,
-          child: Container(
-              padding: EdgeInsets.all(context.w(8)),
-              decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white10
-                      : Colors.black.withValues(alpha: 0.05),
-                  shape: BoxShape.circle),
-              child: Icon(Icons.close_rounded,
-                  size: context.sp(20),
-                  color: isDark ? Colors.white70 : Colors.black54))));
 }

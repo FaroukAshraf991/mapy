@@ -103,6 +103,7 @@ class _ProfileTextFieldState extends State<ProfileTextField> {
         prefixIcon: Icon(widget.icon, color: iconColor, size: context.sp(22)),
         suffixIcon: widget.isPassword
             ? IconButton(
+                tooltip: _obscureText ? 'Show password' : 'Hide password',
                 icon: Icon(
                     _obscureText ? Icons.visibility_off : Icons.visibility,
                     color: iconColor,

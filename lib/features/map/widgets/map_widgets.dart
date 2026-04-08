@@ -7,6 +7,8 @@ export 'add_shortcut_button.dart';
 export 'map_info_chip.dart';
 export 'recents_bottom_sheet.dart';
 export 'shortcuts_bar.dart';
+export 'search_place_row.dart';
+export 'more_shortcuts_sheet.dart';
 export 'location_action_sheet.dart';
 export 'top_search_overlay.dart';
 export 'trip_bar.dart';

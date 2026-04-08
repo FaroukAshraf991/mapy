@@ -60,8 +60,10 @@ class ManageAccountSheet extends StatelessWidget {
     final txt = isDark ? Colors.white : AppConstants.darkBackground;
     final sub = isDark ? Colors.white54 : Colors.black45;
     final tileBg = isDark ? const Color(0xFF1C1C1C) : const Color(0xFFF2F2F2);
+    final effectiveHeight =
+        (context.screenHeight * 0.92).clamp(0.0, context.maxSheetHeight);
     return Container(
-        height: MediaQuery.of(context).size.height * 0.92,
+        height: effectiveHeight,
         decoration: BoxDecoration(
             color: bg,
             borderRadius:
@@ -76,6 +78,7 @@ class ManageAccountSheet extends StatelessWidget {
                     IconButton(
                         icon: Icon(Icons.close_rounded,
                             color: txt, size: context.sp(22)),
+                        tooltip: 'Close account manager',
                         onPressed: () => Navigator.pop(context)),
                     Expanded(
                         child: Text('Mapy Account',
@@ -87,10 +90,12 @@ class ManageAccountSheet extends StatelessWidget {
                     IconButton(
                         icon: Icon(Icons.help_outline_rounded,
                             color: txt, size: context.sp(22)),
+                        tooltip: 'Help and support',
                         onPressed: () {}),
                     IconButton(
                         icon: Icon(Icons.search_rounded,
                             color: txt, size: context.sp(22)),
+                        tooltip: 'Search account settings',
                         onPressed: () {})
                   ]))),
           Expanded(

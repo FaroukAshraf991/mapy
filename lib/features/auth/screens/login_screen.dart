@@ -78,7 +78,9 @@ class _LoginScreenState extends State<LoginScreen>
       backgroundColor: bgColor,
       body: SafeArea(
           child: Center(
-              child: SingleChildScrollView(
+              child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: context.maxAuthWidth),
+                  child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: context.w(24)),
                   child: FadeTransition(
                     opacity: fadeAnimation,
@@ -193,20 +195,27 @@ class _LoginScreenState extends State<LoginScreen>
                                     ]),
                               )),
                         )),
-                  )))),
+                  ))))),
     );
   }
   Widget _buildRememberAndForgot(bool isDark) => Row(children: [
-        Transform.translate(
-            offset: Offset(-context.w(8), 0),
-            child: Checkbox(
-                value: _rememberMe,
-                onChanged: (val) => setState(() => _rememberMe = val ?? false),
-                activeColor: Colors.blueAccent,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(context.r(4))))),
-        Transform.translate(
-            offset: Offset(-context.w(14), 0),
+        SizedBox(
+          width: context.w(24),
+          height: context.w(24),
+          child: Checkbox(
+              value: _rememberMe,
+              onChanged: (val) => setState(() => _rememberMe = val ?? false),
+              activeColor: Colors.blueAccent,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(context.r(4)))),
+        ),
+        SizedBox(width: context.w(8)),
+        Semantics(
+            button: true,
+            checked: _rememberMe,
+            label: 'Remember me toggle',
             child: GestureDetector(
                 onTap: () => setState(() => _rememberMe = !_rememberMe),
                 child: Text('Remember me',
@@ -218,6 +227,10 @@ class _LoginScreenState extends State<LoginScreen>
         const Spacer(),
         TextButton(
             onPressed: _forgotPassword,
+            style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap),
             child: Text('Forgot Password?',
                 style: TextStyle(
                     color: isDark

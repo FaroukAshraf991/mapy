@@ -152,9 +152,12 @@ class EditDOBDialog extends StatelessWidget {
         ),
       );
 
-  Widget _buildDOBPicker(BuildContext ctx) => GestureDetector(
-        onTap: onPickDate,
-        child: Container(
+  Widget _buildDOBPicker(BuildContext ctx) => Semantics(
+        button: true,
+        label: 'Pick Date of Birth',
+        child: GestureDetector(
+          onTap: onPickDate,
+          child: Container(
           padding: EdgeInsets.all(ctx.w(16)),
           decoration: BoxDecoration(
             color: isDark
@@ -185,5 +188,6 @@ class EditDOBDialog extends StatelessWidget {
             ],
           ),
         ),
-      );
+      ),
+    );
 }

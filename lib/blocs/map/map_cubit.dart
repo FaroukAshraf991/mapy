@@ -35,8 +35,12 @@ class MapCubit extends Cubit<MapState> with MapCubitNavigationMixin {
   @override
   double distanceToNextStep = 0.0;
 
+  @override
+  int routeProgressIndex = 0;
+
   DateTime? lastNotificationTime;
   String? lastNotificationText;
+  DateTime? _lastFollowAnimateTime;
 
   StreamSubscription<Position>? positionSubscription;
   StreamSubscription<CompassEvent>? compassSubscription;
@@ -83,6 +87,112 @@ class MapCubit extends Cubit<MapState> with MapCubitNavigationMixin {
         return isDark ? AppConstants.darkStyleUrl : AppConstants.osmStyleUrl;
       case MapStyle.terrain:
         return isDark ? AppConstants.darkStyleUrl : AppConstants.osmStyleUrl;
+    }
+  }
+
+  /// Cycles follow mode: none → follow → compass → follow → …
+  /// Called by the locate-me button tap.
+  Future<void> cycleFollowMode() async {
+    // First tap when location unknown: acquire it, then enter follow
+    if (state.currentLocation == null) {
+      try {
+        final pos = await getCurrentPosition();
+        if (pos == null || isClosed) return;
+        updateCurrentLocation(pos);
+      } catch (_) {
+        return;
+      }
+    }
+
+    final next = switch (state.locationFollowMode) {
+      LocationFollowMode.none => LocationFollowMode.follow,
+      LocationFollowMode.follow => LocationFollowMode.compass,
+      LocationFollowMode.compass => LocationFollowMode.follow,
+    };
+
+    emit(state.copyWith(locationFollowMode: next));
+    _animateToUserInFollowMode(next);
+  }
+
+  void breakFollowMode() {
+    if (state.locationFollowMode != LocationFollowMode.none && !state.isNavigating) {
+      emit(state.copyWith(locationFollowMode: LocationFollowMode.none));
+    }
+  }
+
+  /// Called from onCameraIdle to detect user-initiated map drags.
+  void onCameraIdleDragCheck() {
+    if (state.locationFollowMode == LocationFollowMode.none || state.isNavigating) return;
+    final now = DateTime.now();
+    // If we haven't programmatically moved the camera in the last 900ms, the user dragged.
+    if (_lastFollowAnimateTime == null ||
+        now.difference(_lastFollowAnimateTime!).inMilliseconds > 900) {
+      breakFollowMode();
+    }
+  }
+
+  void _animateToUserInFollowMode(LocationFollowMode mode) {
+    if (mapController == null || state.currentLocation == null) return;
+    _lastFollowAnimateTime = DateTime.now();
+
+    if (mode == LocationFollowMode.compass) {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: state.currentLocation!,
+            zoom: 17.0,
+            tilt: 50.0,
+            bearing: navigationRotation,
+          ),
+        ),
+        duration: const Duration(milliseconds: 700),
+      );
+    } else {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: state.currentLocation!,
+            zoom: 16.0,
+            tilt: 0.0,
+            bearing: 0.0,
+          ),
+        ),
+        duration: const Duration(milliseconds: 700),
+      );
+    }
+  }
+
+  void _updateFollowCamera() {
+    if (mapController == null || state.currentLocation == null) return;
+    if (state.locationFollowMode == LocationFollowMode.none) return;
+    _lastFollowAnimateTime = DateTime.now();
+
+    final currentZoom = mapController!.cameraPosition?.zoom;
+
+    if (state.locationFollowMode == LocationFollowMode.compass) {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: state.currentLocation!,
+            zoom: currentZoom ?? 17.0,
+            tilt: 50.0,
+            bearing: navigationRotation,
+          ),
+        ),
+        duration: const Duration(milliseconds: 300),
+      );
+    } else {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: state.currentLocation!,
+            zoom: currentZoom ?? 16.0,
+            tilt: 0.0,
+            bearing: 0.0,
+          ),
+        ),
+        duration: const Duration(milliseconds: 300),
+      );
     }
   }
 
@@ -193,6 +303,7 @@ class MapCubit extends Cubit<MapState> with MapCubitNavigationMixin {
       customPins: state.customPins,
       isNavigating: state.isNavigating,
       navigationRotation: navigationRotation,
+      routeProgressIndex: routeProgressIndex,
       force: force,
       showTraffic: state.showTraffic,
     );
@@ -214,23 +325,38 @@ class MapCubit extends Cubit<MapState> with MapCubitNavigationMixin {
         currentSpeed: position.speed * 3.6,
       ));
       if (state.isNavigating && isFollowingUser) {
-        updateNavigationPerspective(position);
         updateGuidance(position);
+        updateNavigationPerspective(position);
+      } else {
+        updateLayers();
+        if (state.locationFollowMode != LocationFollowMode.none) {
+          _updateFollowCamera();
+        }
       }
     });
     compassSubscription?.cancel();
     compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
       if (isClosed) return;
-      if (!state.isNavigating || event.heading == null) return;
-      if ((state.travelMode == TravelMode.driving ||
-              state.travelMode == TravelMode.motorcycle) &&
-          state.currentSpeed > 4.0) return;
-      final diff =
-          ((navigationRotation - event.heading!).abs() + 180) % 360 - 180;
-      if (diff.abs() > 1.5) {
-        navigationRotation = event.heading!;
-        if (isFollowingUser) updateCameraFromCurrentState();
-        updateLayers();
+      if (event.heading == null) return;
+
+      if (state.isNavigating) {
+        if ((state.travelMode == TravelMode.driving ||
+                state.travelMode == TravelMode.motorcycle) &&
+            state.currentSpeed > 4.0) return;
+        final diff =
+            ((navigationRotation - event.heading!).abs() + 180) % 360 - 180;
+        if (diff.abs() > 1.5) {
+          navigationRotation = event.heading!;
+          if (isFollowingUser) updateCameraFromCurrentState();
+          updateLayers();
+        }
+      } else if (state.locationFollowMode == LocationFollowMode.compass) {
+        final diff =
+            ((navigationRotation - event.heading!).abs() + 180) % 360 - 180;
+        if (diff.abs() > 1.5) {
+          navigationRotation = event.heading!;
+          _updateFollowCamera();
+        }
       }
     });
   }

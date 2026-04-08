@@ -187,6 +187,7 @@ class _LayersOverlayState extends State<LayersOverlay>
           IconButton(
             icon: Icon(Icons.close_rounded,
                 color: textColor, size: context.sp(22)),
+            tooltip: 'Close layers panel',
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -372,11 +373,14 @@ class _LayersOverlayState extends State<LayersOverlay>
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: iconColor,
-            activeTrackColor: iconColor.withValues(alpha: 0.3),
+          Semantics(
+            label: 'Toggle \$label',
+            child: Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: iconColor,
+              activeTrackColor: iconColor.withValues(alpha: 0.3),
+            ),
           ),
         ],
       ),
